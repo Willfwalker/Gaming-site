@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}BUG Leaderboards{% endblock %}
+
+{% block header_title %}Game Leaderboards{% endblock %}
+
+{% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="auth-alert {% if category %}{{ category }}{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+<div class="leaderboard-container">
+    <div class="game-widget" id="mariokart-widget">
+        <div class="widget-header">
+            <h2>Mario Kart</h2>
+            <div class="widget-controls">
+                <button class="refresh-btn" data-game="mario-kart">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18">
+                        <path d="M4 12a1 1 0 011-1h14a1 1 0 110 2H5a1 1 0 01-1-1z"></path>
+                    </svg>
+                    Refresh
+                </button>
+            </div>
+        </div>
+        <div class="widget-content">
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Player</th>
+                        <th>Wins</th>
+                        <th>Losses</th>
+                        <th>Win %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if mario_kart_leaderboard %}
+                        {% for i, player in enumerate(mario_kart_leaderboard, 1) %}
+                        <tr>
+                            <td class="rank">{{ i }}</td>
+                            <td class="player">{{ player.display_name }}</td>
+                            <td class="wins">{{ player.wins }}</td>
+                            <td class="losses">{{ player.losses }}</td>
+                            <td class="win-percent">{{ player.win_percentage }}%</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="no-data">No player data available</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="game-widget" id="smashbros-widget">
+        <div class="widget-header">
+            <h2>Smash Bros</h2>
+            <div class="widget-controls">
+                <button class="refresh-btn" data-game="smash-bros">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18">
+                        <path d="M4 12a1 1 0 011-1h14a1 1 0 110 2H5a1 1 0 01-1-1z"></path>
+                    </svg>
+                    Refresh
+                </button>
+            </div>
+        </div>
+        <div class="widget-content">
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Player</th>
+                        <th>Wins</th>
+                        <th>Losses</th>
+                        <th>Win %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if smash_bros_leaderboard %}
+                        {% for i, player in enumerate(smash_bros_leaderboard, 1) %}
+                        <tr>
+                            <td class="rank">{{ i }}</td>
+                            <td class="player">{{ player.display_name }}</td>
+                            <td class="wins">{{ player.wins }}</td>
+                            <td class="losses">{{ player.losses }}</td>
+                            <td class="win-percent">{{ player.win_percentage }}%</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="no-data">No player data available</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add event listeners to refresh buttons
+        const refreshButtons = document.querySelectorAll('.refresh-btn');
+        refreshButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const game = this.getAttribute('data-game');
+                refreshLeaderboard(game);
+            });
+        });
+
+        function refreshLeaderboard(game) {
+            console.log(`Refreshing ${game} leaderboard...`);
+            // Add loading state
+            const widget = document.getElementById(`${game === 'mario-kart' ? 'mariokart' : 'smashbros'}-widget`);
+            widget.classList.add('loading');
+            
+            // Make API call to get updated leaderboard
+            fetch(`/api/leaderboard/${game}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update the leaderboard table
+                        const tbody = widget.querySelector('tbody');
+                        tbody.innerHTML = '';
+                        
+                        if (data.leaderboard && data.leaderboard.length > 0) {
+                            data.leaderboard.forEach((player, index) => {
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td class="rank">${index + 1}</td>
+                                    <td class="player">${player.display_name}</td>
+                                    <td class="wins">${player.wins}</td>
+                                    <td class="losses">${player.losses}</td>
+                                    <td class="win-percent">${player.win_percentage}%</td>
+                                `;
+                                tbody.appendChild(row);
+                            });
+                        } else {
+                            const row = document.createElement('tr');
+                            row.innerHTML = '<td colspan="5" class="no-data">No player data available</td>';
+                            tbody.appendChild(row);
+                        }
+                    } else {
+                        console.error('Failed to refresh leaderboard:', data.message);
+                    }
+                    
+                    // Remove loading state
+                    widget.classList.remove('loading');
+                })
+                .catch(error => {
+                    console.error('Error refreshing leaderboard:', error);
+                    widget.classList.remove('loading');
+                });
+        }
+    });
+</script>
+{% endblock %}

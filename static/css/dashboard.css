@@ -1,0 +1,855 @@
+/* Dashboard Styles - Modern Gaming Dashboard */
+
+/* Base styles and theme variables */
+:root {
+    /* Light theme variables */
+    --light-bg: #f3f4f6;
+    --light-card-bg: #ffffff;
+    --light-sidebar-bg: #ffffff;
+    --light-navbar-bg: #ffffff;
+    --light-text: #1f2937;
+    --light-text-secondary: #4b5563;
+    --light-divider: #e5e7eb;
+    --light-input-bg: #f3f4f6;
+    --light-card-hover: #f9fafb;
+    --light-progress-bg: #e5e7eb;
+    
+    /* Dark theme variables */
+    --dark-bg: #111827;
+    --dark-card-bg: #1f2937;
+    --dark-sidebar-bg: #1f2937;
+    --dark-navbar-bg: #1f2937;
+    --dark-text: #f3f4f6;
+    --dark-text-secondary: #9ca3af;
+    --dark-divider: #374151;
+    --dark-input-bg: #374151;
+    --dark-card-hover: #2d3748;
+    --dark-progress-bg: #374151;
+    
+    /* Game colors */
+    --mario-color: #dc2626;
+    --smash-color: #2563eb;
+    --trophy-color: #fbbf24;
+    
+    /* Default to dark theme */
+    --bg: var(--dark-bg);
+    --card-bg: var(--dark-card-bg);
+    --sidebar-bg: var(--dark-sidebar-bg);
+    --navbar-bg: var(--dark-navbar-bg);
+    --text: var(--dark-text);
+    --text-secondary: var(--dark-text-secondary);
+    --divider: var(--dark-divider);
+    --input-bg: var(--dark-input-bg);
+    --card-hover: var(--dark-card-hover);
+    --progress-bg: var(--dark-progress-bg);
+}
+
+body.light-theme {
+    --bg: var(--light-bg);
+    --card-bg: var(--light-card-bg);
+    --sidebar-bg: var(--light-sidebar-bg);
+    --navbar-bg: var(--light-navbar-bg);
+    --text: var(--light-text);
+    --text-secondary: var(--light-text-secondary);
+    --divider: var(--light-divider);
+    --input-bg: var(--light-input-bg);
+    --card-hover: var(--light-card-hover);
+    --progress-bg: var(--light-progress-bg);
+}
+
+body.game-dashboard {
+    display: block;
+    background-color: var(--bg);
+    min-height: 100vh;
+}
+
+/* Top Navigation Bar */
+.top-navbar {
+    background-color: var(--navbar-bg);
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    transition: background-color 0.3s ease;
+}
+
+.navbar-brand {
+    display: flex;
+    align-items: center;
+}
+
+.trophy-icon-brand {
+    color: var(--trophy-color);
+    margin-right: 0.5rem;
+    font-size: 1.25rem;
+}
+
+.navbar-brand h1 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text);
+    transition: color 0.3s ease;
+}
+
+.search-container {
+    position: relative;
+    flex-grow: 1;
+    max-width: 400px;
+    margin: 0 2rem;
+}
+
+.search-icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.search-input {
+    width: 100%;
+    background-color: var(--input-bg);
+    border: none;
+    border-radius: 9999px;
+    padding: 0.5rem 1rem 0.5rem 2.25rem;
+    font-size: 0.875rem;
+    color: var(--text);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+.navbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.navbar-icon {
+    color: var(--text-secondary);
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.navbar-icon:hover {
+    color: var(--text);
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.user-avatar {
+    width: 2rem;
+    height: 2rem;
+    background-color: #3b82f6;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.5rem;
+    color: white;
+}
+
+.user-name {
+    color: var(--text);
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: color 0.3s ease;
+    display: none;
+}
+
+@media (min-width: 768px) {
+    .user-name {
+        display: block;
+    }
+}
+
+/* Sidebar */
+.sidebar {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: 4rem;
+    height: calc(100vh - 60px);
+    background-color: var(--sidebar-bg);
+    transition: background-color 0.3s ease, width 0.3s ease;
+    overflow-y: auto;
+    z-index: 90;
+}
+
+@media (min-width: 768px) {
+    .sidebar {
+        width: 16rem;
+    }
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 1.5rem 0.75rem;
+}
+
+.sidebar-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 2rem 0;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    color: var(--text);
+    text-decoration: none;
+    margin-bottom: 0.5rem;
+    transition: background-color 0.2s ease, color 0.3s ease;
+}
+
+.nav-item:hover {
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+.nav-item.active {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.nav-icon {
+    font-size: 1.25rem;
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+}
+
+.nav-text {
+    font-size: 0.875rem;
+    font-weight: 500;
+    display: none;
+}
+
+@media (min-width: 768px) {
+    .nav-text {
+        display: block;
+    }
+}
+
+.sidebar-footer {
+    margin-top: auto;
+    padding: 0 0.5rem;
+}
+
+.upgrade-box {
+    background-color: var(--card-bg);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease;
+}
+
+.upgrade-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+    color: var(--text);
+    transition: color 0.3s ease;
+    display: none;
+}
+
+.upgrade-desc {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin: 0 0 0.75rem 0;
+    transition: color 0.3s ease;
+    display: none;
+}
+
+.upgrade-btn {
+    width: 100%;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.upgrade-btn:hover {
+    background-color: #2563eb;
+}
+
+@media (min-width: 768px) {
+    .upgrade-title, .upgrade-desc {
+        display: block;
+    }
+}
+
+/* Main Content */
+.main-content {
+    margin-left: 4rem;
+    margin-top: 60px;
+    padding: 1.5rem;
+    transition: margin-left 0.3s ease;
+}
+
+@media (min-width: 768px) {
+    .main-content {
+        margin-left: 16rem;
+    }
+}
+
+.content-area {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Dashboard Wrapper */
+.dashboard-wrapper {
+    width: 100%;
+}
+
+.dashboard-header {
+    margin-bottom: 2rem;
+}
+
+.dashboard-title {
+    font-size: 1.875rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+    color: var(--text);
+    transition: color 0.3s ease;
+}
+
+.dashboard-subtitle {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin: 0;
+    transition: color 0.3s ease;
+}
+
+/* Game Widgets */
+.game-widgets {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+@media (min-width: 768px) {
+    .game-widgets {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.game-widget {
+    background-color: var(--card-bg);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, background-color 0.3s ease;
+    cursor: pointer;
+}
+
+.game-widget:hover {
+    transform: scale(1.03);
+}
+
+.game-widget-color-bar {
+    height: 0.5rem;
+}
+
+.mario-widget .game-widget-color-bar {
+    background-color: var(--mario-color);
+}
+
+.smash-widget .game-widget-color-bar {
+    background-color: var(--smash-color);
+}
+
+.game-widget-content {
+    padding: 1.5rem;
+}
+
+.game-widget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.game-icon {
+    font-size: 1.875rem;
+}
+
+.player-badge {
+    background-color: var(--card-hover);
+    border-radius: 9999px;
+    padding: 0.25rem 0.75rem;
+    display: flex;
+    align-items: center;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.player-badge-icon {
+    margin-right: 0.25rem;
+    font-size: 0.75rem;
+}
+
+.player-count {
+    font-weight: 500;
+}
+
+.game-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 1rem 0;
+    color: var(--text);
+    transition: color 0.3s ease;
+}
+
+.game-widget-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.view-leaderboard-link {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.view-leaderboard-link:hover {
+    color: var(--text);
+}
+
+.trophy-icon {
+    color: var(--trophy-color);
+    font-size: 1rem;
+}
+
+/* Top Players Section */
+.top-players-section {
+    background-color: var(--card-bg);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.medal-icon, .activity-icon, .stats-icon {
+    color: var(--trophy-color);
+    font-size: 1.25rem;
+    margin-right: 0.75rem;
+}
+
+.activity-icon {
+    color: #10b981;
+}
+
+.stats-icon {
+    color: #3b82f6;
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text);
+    transition: color 0.3s ease;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+.players-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.players-table th {
+    text-align: left;
+    padding: 0.75rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--divider);
+    transition: color 0.3s ease, border-color 0.3s ease;
+}
+
+.players-table td {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text);
+    border-bottom: 1px solid var(--divider);
+    transition: color 0.3s ease, border-color 0.3s ease;
+}
+
+.players-table tr:hover td {
+    background-color: var(--card-hover);
+}
+
+.rank-column {
+    width: 70px;
+    padding-left: 1rem;
+}
+
+.rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.rank-1 {
+    background-color: #fef3c7;
+    color: #d97706;
+}
+
+.rank-2 {
+    background-color: #e5e7eb;
+    color: #4b5563;
+}
+
+.rank-3 {
+    background-color: #fde68a;
+    color: #b45309;
+}
+
+.player-column {
+    font-weight: 500;
+}
+
+.points-column {
+    text-align: right;
+    font-family: monospace;
+    font-weight: 600;
+    padding-right: 1rem;
+}
+
+.view-all-container {
+    text-align: center;
+    margin-top: 1.5rem;
+}
+
+.view-all-link {
+    color: #3b82f6;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.view-all-link:hover {
+    color: #2563eb;
+    text-decoration: underline;
+}
+
+/* Dashboard Bottom Grid */
+.dashboard-bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+    .dashboard-bottom-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Activity Section */
+.activity-section {
+    background-color: var(--card-bg);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease;
+}
+
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    background-color: var(--card-hover);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    transition: background-color 0.3s ease;
+}
+
+.activity-icon-wrapper {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+}
+
+.mario-icon {
+    background-color: rgba(220, 38, 38, 0.8);
+    color: white;
+}
+
+.smash-icon {
+    background-color: rgba(37, 99, 235, 0.8);
+    color: white;
+}
+
+.trophy-icon-wrapper {
+    background-color: rgba(245, 158, 11, 0.8);
+    color: white;
+}
+
+.activity-content {
+    flex-grow: 1;
+}
+
+.activity-title {
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin: 0 0 0.25rem 0;
+    color: var(--text);
+    transition: color 0.3s ease;
+}
+
+.activity-subtitle {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin: 0;
+    transition: color 0.3s ease;
+}
+
+.activity-time {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    transition: color 0.3s ease;
+}
+
+/* Stats Section */
+.stats-section {
+    background-color: var(--card-bg);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease;
+}
+
+.stats-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.game-stats-item {
+    display: flex;
+    align-items: flex-start;
+}
+
+.game-stats-bar {
+    width: 0.5rem;
+    height: 4rem;
+    border-radius: 9999px;
+    margin-right: 1rem;
+    flex-shrink: 0;
+}
+
+.mario-bar {
+    background-color: var(--mario-color);
+}
+
+.smash-bar {
+    background-color: var(--smash-color);
+}
+
+.game-stats-info {
+    flex-grow: 1;
+}
+
+.game-stats-title {
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin: 0 0 0.5rem 0;
+    color: var(--text);
+    transition: color 0.3s ease;
+}
+
+.progress-bar-container {
+    width: 100%;
+    height: 0.75rem;
+    background-color: var(--progress-bg);
+    border-radius: 9999px;
+    overflow: hidden;
+    margin-bottom: 0.25rem;
+    transition: background-color 0.3s ease;
+}
+
+.progress-bar {
+    height: 100%;
+    border-radius: 9999px;
+}
+
+.mario-progress {
+    background-color: var(--mario-color);
+}
+
+.smash-progress {
+    background-color: var(--smash-color);
+}
+
+.progress-bar-labels {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.progress-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    transition: color 0.3s ease;
+}
+
+.progress-value {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text);
+    transition: color 0.3s ease;
+}
+
+.characters-section {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--divider);
+    transition: border-color 0.3s ease;
+}
+
+.characters-title {
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin: 0 0 0.75rem 0;
+    color: var(--text);
+    transition: color 0.3s ease;
+}
+
+.characters-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+}
+
+.character-item {
+    display: flex;
+    align-items: center;
+    background-color: var(--card-hover);
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+    transition: background-color 0.3s ease;
+}
+
+.character-icon {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.5rem;
+    font-weight: 600;
+    color: white;
+}
+
+.mario-character {
+    background-color: var(--mario-color);
+}
+
+.link-character {
+    background-color: var(--smash-color);
+}
+
+.character-info {
+    flex-grow: 1;
+}
+
+.character-name {
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin: 0 0 0.125rem 0;
+    color: var(--text);
+    transition: color 0.3s ease;
+}
+
+.character-usage {
+    font-size: 0.6875rem;
+    color: var(--text-secondary);
+    margin: 0;
+    transition: color 0.3s ease;
+}
+
+/* Theme toggle button */
+.theme-toggle {
+    position: fixed;
+    top: 70px;
+    right: 1rem;
+    z-index: 100;
+    background: var(--card-bg);
+    border: 1px solid var(--divider);
+    color: var(--text);
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.theme-toggle:hover {
+    background-color: var(--card-hover);
+}
+
+.theme-toggle svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    fill: var(--text);
+}

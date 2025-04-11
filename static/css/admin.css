@@ -1,0 +1,356 @@
+/* Admin Panel Styles */
+:root {
+    --admin-primary: #3b82f6;
+    --admin-primary-hover: #2563eb;
+    --admin-success: #10b981;
+    --admin-danger: #ef4444;
+    --admin-warning: #f59e0b;
+    --admin-info: #3b82f6;
+    --admin-light: #f3f4f6;
+    --admin-dark: #1f2937;
+    --admin-border: #e5e7eb;
+}
+
+/* Admin Header */
+.dashboard-header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+}
+
+.primary-btn {
+    background-color: var(--admin-primary);
+    color: white;
+    border: none;
+    border-radius: 0.375rem;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin-top: 1rem;
+}
+
+.primary-btn:hover {
+    background-color: var(--admin-primary-hover);
+}
+
+/* Admin Sections */
+.admin-section {
+    background-color: var(--card-bg);
+    border-radius: 0.5rem;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 2rem;
+    overflow: hidden;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--admin-border);
+}
+
+.section-header h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.section-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.admin-select {
+    background-color: var(--card-bg);
+    border: 1px solid var(--admin-border);
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+    font-size: 0.875rem;
+    min-width: 150px;
+    color: var(--text-color);
+}
+
+/* Admin Table */
+.admin-table-container {
+    overflow-x: auto;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.admin-table th,
+.admin-table td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--admin-border);
+}
+
+.admin-table th {
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.admin-table tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.light-theme .admin-table tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Status Badges */
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.status-badge.upcoming {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+}
+
+.status-badge.ongoing {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.status-badge.completed {
+    background-color: rgba(107, 114, 128, 0.1);
+    color: #6b7280;
+}
+
+.featured-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    background-color: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+}
+
+/* Action Buttons */
+.actions-cell {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.action-btn {
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+}
+
+.edit-btn {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+}
+
+.edit-btn:hover {
+    background-color: rgba(59, 130, 246, 0.2);
+}
+
+.view-btn {
+    background-color: rgba(107, 114, 128, 0.1);
+    color: #6b7280;
+}
+
+.view-btn:hover {
+    background-color: rgba(107, 114, 128, 0.2);
+}
+
+.delete-btn {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.delete-btn:hover {
+    background-color: rgba(239, 68, 68, 0.2);
+}
+
+/* No Data Message */
+.no-data-message {
+    padding: 3rem 1.5rem;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.no-data-message p {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+/* Modal Styles */
+.large-modal {
+    max-width: 700px;
+    width: 90%;
+}
+
+.small-modal {
+    max-width: 450px;
+    width: 90%;
+}
+
+/* Admin Form */
+.admin-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.form-row {
+    display: flex;
+    gap: 1.25rem;
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    padding: 0.625rem;
+    border: 1px solid var(--admin-border);
+    border-radius: 0.375rem;
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    font-size: 0.875rem;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--admin-primary);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.checkbox-row {
+    margin-top: 0.5rem;
+}
+
+.checkbox-group {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.cancel-btn {
+    padding: 0.625rem 1.25rem;
+    border: 1px solid var(--admin-border);
+    border-radius: 0.375rem;
+    background-color: transparent;
+    color: var(--text-color);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.submit-btn {
+    padding: 0.625rem 1.25rem;
+    border: none;
+    border-radius: 0.375rem;
+    background-color: var(--admin-primary);
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.submit-btn:hover {
+    background-color: var(--admin-primary-hover);
+}
+
+.delete-confirm-btn {
+    padding: 0.625rem 1.25rem;
+    border: none;
+    border-radius: 0.375rem;
+    background-color: var(--admin-danger);
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.delete-confirm-btn:hover {
+    background-color: #dc2626;
+}
+
+.tournament-name-display {
+    font-weight: 600;
+    margin-top: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .form-row {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .actions-cell {
+        flex-direction: column;
+        gap: 0.375rem;
+    }
+    
+    .action-btn {
+        width: 100%;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+    
+    .section-actions {
+        width: 100%;
+    }
+    
+    .admin-select {
+        flex: 1;
+    }
+}

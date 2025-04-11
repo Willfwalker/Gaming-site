@@ -1,0 +1,436 @@
+{% extends "base.html" %}
+
+{% block title %}Tournaments{% endblock %}
+
+{% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="auth-alert {% if category %}{{ category }}{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="dashboard-wrapper">
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">Tournaments</h1>
+        <p class="dashboard-subtitle">Sign up for upcoming tournaments and view past results</p>
+    </div>
+    
+    <!-- Tournament Filters -->
+    <div class="tournament-filters">
+        <div class="filter-buttons">
+            <button class="filter-btn active" data-filter="all">All Tournaments</button>
+            <button class="filter-btn" data-filter="upcoming">Upcoming</button>
+            <button class="filter-btn" data-filter="ongoing">Ongoing</button>
+            <button class="filter-btn" data-filter="completed">Completed</button>
+        </div>
+        <div class="filter-game">
+            <select class="game-select">
+                <option value="all">All Games</option>
+                <option value="mario-kart">Mario Kart</option>
+                <option value="smash-bros">Smash Bros</option>
+            </select>
+        </div>
+    </div>
+    
+    <!-- Tournament Information Section -->
+    {% if tournaments %}
+    <!-- Featured Tournament -->
+    {% if featured_tournament %}
+    <div class="featured-tournament">
+        <div class="featured-tournament-banner" style="background-image: url('{{ url_for('static', filename='img/tournament-banner.jpg') }}');">
+            <div class="featured-tournament-overlay">
+                <div class="featured-badge">Featured</div>
+                <h2 class="featured-title">{{ featured_tournament.name }}</h2>
+                <div class="featured-date">{{ featured_tournament.date|replace('-', '/') }} • {{ featured_tournament.time }}</div>
+                <div class="featured-status {{ featured_tournament.status }}">
+                    {% if featured_tournament.status == 'upcoming' %}
+                        {% if featured_tournament.spots_used < featured_tournament.total_spots %}
+                            Registration Open
+                        {% else %}
+                            Registration Full
+                        {% endif %}
+                    {% elif featured_tournament.status == 'ongoing' %}
+                        In Progress
+                    {% else %}
+                        Completed
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="featured-tournament-details">
+            <div class="tournament-info">
+                <div class="tournament-game">
+                    <div class="game-icon">{% if featured_tournament.game == 'mario-kart' %}🏎️{% else %}⚔️{% endif %}</div>
+                    <span>{% if featured_tournament.game == 'mario-kart' %}Mario Kart{% else %}Smash Bros{% endif %}</span>
+                </div>
+                <div class="tournament-participants">
+                    <div class="participants-icon">👥</div>
+                    <span>{{ featured_tournament.spots_used }}/{{ featured_tournament.total_spots }} Registered</span>
+                </div>
+                <div class="tournament-prize">
+                    <div class="prize-icon">🏆</div>
+                    <span>{{ featured_tournament.prize_pool }} Prize Pool</span>
+                </div>
+            </div>
+            <div class="tournament-description">
+                <p>{{ featured_tournament.description }}</p>
+                <div class="tournament-actions">
+                    {% if featured_tournament.status == 'upcoming' and featured_tournament.spots_used < featured_tournament.total_spots %}
+                        <button class="register-btn" data-tournament-id="{{ featured_tournament.id }}">Register Now</button>
+                    {% elif featured_tournament.status == 'upcoming' %}
+                        <button class="register-btn" disabled>Registration Full</button>
+                    {% elif featured_tournament.status == 'completed' %}
+                        <button class="results-btn">View Results</button>
+                    {% endif %}
+                    <button class="details-btn" data-tournament-id="{{ featured_tournament.id }}">View Details</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="no-tournaments-message">
+        <div class="message-icon">🎮</div>
+        <h2>No Tournaments Available</h2>
+        <p>There are currently no tournaments scheduled. Check back later for upcoming events!</p>
+    </div>
+    {% endif %}
+    
+    <!-- Tournament Grid -->
+    {% if tournaments %}
+    <div class="tournament-grid">
+        {% for tournament in tournaments %}
+            {% if not tournament.get('featured', False) or (tournament.get('featured', False) and featured_tournament and tournament.id != featured_tournament.id) %}
+            <div class="tournament-card {{ tournament.status }}" data-game="{{ tournament.game }}">
+                <div class="tournament-card-header {% if tournament.game == 'mario-kart' %}mario-header{% else %}smash-header{% endif %}">
+                    <div class="tournament-status">{{ tournament.status|title }}</div>
+                    <div class="tournament-date">{{ tournament.date|replace('-', '/') }}</div>
+                </div>
+                <div class="tournament-card-content">
+                    <div class="tournament-card-game">
+                        <div class="game-icon">{% if tournament.game == 'mario-kart' %}🏎️{% else %}⚔️{% endif %}</div>
+                        <span>{% if tournament.game == 'mario-kart' %}Mario Kart{% else %}Smash Bros{% endif %}</span>
+                    </div>
+                    <h3 class="tournament-card-title">{{ tournament.name }}</h3>
+                    <div class="tournament-card-info">
+                        <div class="info-item">
+                            <span class="info-icon">👥</span>
+                            <span class="info-text">{{ tournament.spots_used }}/{{ tournament.total_spots }} Players</span>
+                        </div>
+                        <div class="info-item">
+                            {% if tournament.status == 'completed' and tournament.get('winner') %}
+                                <span class="info-icon">👑</span>
+                                <span class="info-text">Winner: {{ tournament.winner }}</span>
+                            {% else %}
+                                <span class="info-icon">🏆</span>
+                                <span class="info-text">{{ tournament.prize_pool }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="tournament-card-actions">
+                        {% if tournament.status == 'upcoming' %}
+                            {% if tournament.spots_used < tournament.total_spots %}
+                                <button class="register-btn-small" data-tournament-id="{{ tournament.id }}">Register</button>
+                            {% else %}
+                                <button class="register-btn-small" disabled>Full</button>
+                            {% endif %}
+                            <button class="details-btn-small" data-tournament-id="{{ tournament.id }}">Details</button>
+                        {% elif tournament.status == 'ongoing' %}
+                            <button class="details-btn-small" data-tournament-id="{{ tournament.id }}">Details</button>
+                        {% else %}
+                            <button class="results-btn" data-tournament-id="{{ tournament.id }}">View Results</button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- No Load More Button Needed -->
+    
+    <!-- Registration Modal -->
+    <div class="modal-overlay" id="registrationModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 class="modal-title">Tournament Registration</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-content">
+                <div class="tournament-modal-info">
+                    <h4 id="modalTournamentTitle"></h4>
+                    <p id="modalTournamentDate"></p>
+                    <div class="modal-game-info">
+                        <div class="game-icon" id="modalGameIcon"></div>
+                        <span id="modalGameName"></span>
+                    </div>
+                </div>
+                
+                <form class="registration-form">
+                    <div id="registrationMessage" class="registration-message" style="display: none;"></div>
+                    <div class="form-group">
+                        <label for="gamertag">Gamertag</label>
+                        <input type="text" id="gamertag" name="gamertag" placeholder="Enter your in-game name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="discord">Discord Username</label>
+                        <input type="text" id="discord" name="discord" placeholder="Your Discord username (optional)">
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="rules" name="rules" required>
+                        <label for="rules">I agree to follow all tournament rules</label>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Experience Level</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="experience" value="beginner"> Beginner
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="experience" value="intermediate"> Intermediate
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="experience" value="advanced"> Advanced
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="experience" value="pro"> Professional
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-checkbox">
+                            <input type="checkbox" required>
+                            I agree to the tournament rules and code of conduct
+                        </label>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="submit-btn">Register</button>
+                        <button type="button" class="cancel-btn">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Filter buttons functionality
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        const tournamentCards = document.querySelectorAll('.tournament-card');
+        const gameSelect = document.querySelector('.game-select');
+        
+        // Function to filter tournaments
+        function filterTournaments() {
+            const activeFilter = document.querySelector('.filter-btn.active').dataset.filter;
+            const selectedGame = gameSelect.value;
+            
+            tournamentCards.forEach(card => {
+                const isFilterMatch = activeFilter === 'all' || card.classList.contains(activeFilter);
+                const isGameMatch = selectedGame === 'all' || card.dataset.game === selectedGame;
+                
+                if (isFilterMatch && isGameMatch) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+        
+        // Add click event to filter buttons
+        filterButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                filterTournaments();
+            });
+        });
+        
+        // Add change event to game select
+        gameSelect.addEventListener('change', filterTournaments);
+        
+        // Tournament data for the modal
+        const tournaments = {};
+        {% for tournament in tournaments %}
+        tournaments["{{ tournament.id }}"] = {
+            name: "{{ tournament.name|replace('"', '\\"') }}",
+            date: "{{ tournament.date|replace('-', '/') }}",
+            time: "{{ tournament.time }}",
+            game: "{{ tournament.game }}",
+            description: "{{ tournament.description|replace('"', '\\"') }}",
+            totalSpots: {{ tournament.total_spots }},
+            spotsUsed: {{ tournament.spots_used }},
+            prizePool: "{{ tournament.prize_pool }}"
+        };
+        {% endfor %}
+        
+        // Modal functionality
+        const registerButtons = document.querySelectorAll('.register-btn, .register-btn-small');
+        const detailButtons = document.querySelectorAll('.details-btn, .details-btn-small');
+        const modal = document.getElementById('registrationModal');
+        const closeModal = document.querySelector('.modal-close');
+        const cancelBtn = document.querySelector('.cancel-btn');
+        
+        const modalTitle = document.getElementById('modalTournamentTitle');
+        const modalDate = document.getElementById('modalTournamentDate');
+        const modalGameIcon = document.getElementById('modalGameIcon');
+        const modalGameName = document.getElementById('modalGameName');
+        
+        function openModal(tournamentId) {
+            // Set modal content based on tournament ID
+            const tournament = tournaments[tournamentId];
+            if (tournament) {
+                modalTitle.textContent = tournament.name;
+                modalDate.textContent = `${tournament.date} • ${tournament.time}`;
+                modalGameIcon.textContent = tournament.game === 'mario-kart' ? '🏎️' : '⚔️';
+                modalGameName.textContent = tournament.game === 'mario-kart' ? 'Mario Kart' : 'Smash Bros';
+                
+                // Store the current tournament ID for registration
+                currentTournamentId = tournamentId;
+                
+                // Reset any previous messages
+                registrationMessage.style.display = 'none';
+                registrationMessage.textContent = '';
+                
+                // Show the modal
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+        
+        function closeModalFunc() {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        
+        registerButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const tournamentId = this.getAttribute('data-tournament-id');
+                openModal(tournamentId);
+            });
+        });
+        
+        detailButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const tournamentId = this.getAttribute('data-tournament-id');
+                // For now, we'll just show the registration modal for details too
+                openModal(tournamentId);
+            });
+        });
+        
+        closeModal.addEventListener('click', closeModalFunc);
+        cancelBtn.addEventListener('click', closeModalFunc);
+        
+        // Close modal when clicking outside
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeModalFunc();
+            }
+        });
+        
+        // Handle form submission
+        const registrationForm = document.querySelector('.registration-form');
+        const registrationMessage = document.getElementById('registrationMessage');
+        let currentTournamentId = null;
+        
+        registrationForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!currentTournamentId) {
+                showRegistrationMessage('Error: Tournament ID not found', 'error');
+                return;
+            }
+            
+            const gamertag = document.getElementById('gamertag').value;
+            const discord = document.getElementById('discord').value;
+            const rulesChecked = document.getElementById('rules').checked;
+            
+            if (!gamertag) {
+                showRegistrationMessage('Please enter your gamertag', 'error');
+                return;
+            }
+            
+            if (!rulesChecked) {
+                showRegistrationMessage('You must agree to the tournament rules', 'error');
+                return;
+            }
+            
+            // Submit registration to server
+            fetch('/api/tournaments/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    tournament_id: currentTournamentId,
+                    gamertag: gamertag,
+                    discord: discord
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showRegistrationMessage(data.message, 'success');
+                    
+                    // Update the spots count in the UI
+                    const tournament = tournaments[currentTournamentId];
+                    if (tournament) {
+                        tournament.spotsUsed += 1;
+                        
+                        // Update any tournament cards or featured tournament that match this ID
+                        const tournamentCards = document.querySelectorAll(`[data-tournament-id="${currentTournamentId}"]`);
+                        tournamentCards.forEach(card => {
+                            const parentCard = card.closest('.tournament-card');
+                            if (parentCard) {
+                                const spotsText = parentCard.querySelector('.info-text');
+                                if (spotsText && spotsText.textContent.includes('Players')) {
+                                    spotsText.textContent = `${tournament.spotsUsed}/${tournament.totalSpots} Players`;
+                                }
+                                
+                                // If tournament is now full, disable register buttons
+                                if (tournament.spotsUsed >= tournament.totalSpots) {
+                                    const registerBtn = parentCard.querySelector('.register-btn-small');
+                                    if (registerBtn) {
+                                        registerBtn.disabled = true;
+                                        registerBtn.textContent = 'Full';
+                                    }
+                                }
+                            }
+                        });
+                        
+                        // Reset form
+                        setTimeout(() => {
+                            registrationForm.reset();
+                            closeModalFunc();
+                            
+                            // Reload page to reflect changes
+                            window.location.reload();
+                        }, 2000);
+                    }
+                } else {
+                    showRegistrationMessage(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                showRegistrationMessage('Error submitting registration', 'error');
+                console.error('Error:', error);
+            });
+        });
+        
+        function showRegistrationMessage(message, type) {
+            registrationMessage.textContent = message;
+            registrationMessage.className = 'registration-message';
+            registrationMessage.classList.add(type);
+            registrationMessage.style.display = 'block';
+        }
+    });
+</script>
+{% endblock %}

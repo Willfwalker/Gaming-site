@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block title %}Gaming Dashboard{% endblock %}
+
+{% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="auth-alert {% if category %}{{ category }}{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="dashboard-wrapper">
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">Gaming Dashboard</h1>
+        <p class="dashboard-subtitle">Select a game to view detailed leaderboards and statistics</p>
+    </div>
+    
+    <!-- Game Widgets - Two columns -->
+    <div class="game-widgets">
+        <!-- Mario Kart Card -->
+        <div class="game-widget mario-widget">
+            <div class="game-widget-color-bar"></div>
+            <div class="game-widget-content">
+                <div class="game-widget-header">
+                    <div class="game-icon">🏎️</div>
+                    <div class="player-badge">
+                        <span class="player-badge-icon">👥</span>
+                        <span class="player-count">24,862</span>
+                    </div>
+                </div>
+                <h3 class="game-title">Mario Kart</h3>
+                <div class="game-widget-footer">
+                    <a href="{{ url_for('leaderboard_page') }}" class="view-leaderboard-link">View Leaderboard</a>
+                    <div class="trophy-icon">🏆</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Smash Bros Card -->
+        <div class="game-widget smash-widget">
+            <div class="game-widget-color-bar"></div>
+            <div class="game-widget-content">
+                <div class="game-widget-header">
+                    <div class="game-icon">⚔️</div>
+                    <div class="player-badge">
+                        <span class="player-badge-icon">👥</span>
+                        <span class="player-count">19,734</span>
+                    </div>
+                </div>
+                <h3 class="game-title">Smash Bros</h3>
+                <div class="game-widget-footer">
+                    <a href="{{ url_for('leaderboard_page') }}" class="view-leaderboard-link">View Leaderboard</a>
+                    <div class="trophy-icon">🏆</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Players Section -->
+    <div class="top-players-section">
+        <div class="section-header">
+            <span class="medal-icon">🏅</span>
+            <h2 class="section-title">Top Players</h2>
+        </div>
+        
+        <div class="table-container">
+            <table class="players-table">
+                <thead>
+                    <tr>
+                        <th class="rank-column">Rank</th>
+                        <th class="player-column">Player</th>
+                        <th class="game-column">Game</th>
+                        <th class="points-column">Points</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="rank-column">
+                            <span class="rank-badge rank-1">1</span>
+                        </td>
+                        <td class="player-column">RainbowRoad</td>
+                        <td class="game-column">Mario Kart</td>
+                        <td class="points-column">15,423</td>
+                    </tr>
+                    <tr>
+                        <td class="rank-column">
+                            <span class="rank-badge rank-1">1</span>
+                        </td>
+                        <td class="player-column">SmashKing</td>
+                        <td class="game-column">Smash Bros</td>
+                        <td class="points-column">14,982</td>
+                    </tr>
+                    <tr>
+                        <td class="rank-column">
+                            <span class="rank-badge rank-2">2</span>
+                        </td>
+                        <td class="player-column">LuigiDrift</td>
+                        <td class="game-column">Mario Kart</td>
+                        <td class="points-column">14,321</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="view-all-container">
+            <a href="{{ url_for('leaderboard_page') }}" class="view-all-link">View All Rankings</a>
+        </div>
+    </div>
+    
+    <!-- Activity & Stats Sections -->
+    <div class="dashboard-bottom-grid">
+        <!-- Recent Activity Section -->
+        <div class="activity-section">
+            <div class="section-header">
+                <span class="activity-icon">📈</span>
+                <h2 class="section-title">Recent Activity</h2>
+            </div>
+            
+            <div class="activity-list">
+                <div class="activity-item">
+                    <div class="activity-icon-wrapper mario-icon">🏎️</div>
+                    <div class="activity-content">
+                        <p class="activity-title">New tournament announced</p>
+                        <p class="activity-subtitle">Mario Kart Grand Prix</p>
+                    </div>
+                    <span class="activity-time">2h ago</span>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="activity-icon-wrapper smash-icon">⚔️</div>
+                    <div class="activity-content">
+                        <p class="activity-title">SmashKing broke a record</p>
+                        <p class="activity-subtitle">Highest KO count in Smash Bros</p>
+                    </div>
+                    <span class="activity-time">5h ago</span>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="activity-icon-wrapper trophy-icon-wrapper">🏆</div>
+                    <div class="activity-content">
+                        <p class="activity-title">Weekly challenge update</p>
+                        <p class="activity-subtitle">New objectives for Mario Kart</p>
+                    </div>
+                    <span class="activity-time">1d ago</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Game Statistics Section -->
+        <div class="stats-section">
+            <div class="section-header">
+                <span class="stats-icon">📈</span>
+                <h2 class="section-title">Game Statistics</h2>
+            </div>
+            
+            <div class="stats-content">
+                <!-- Mario Kart Stats -->
+                <div class="game-stats-item">
+                    <div class="game-stats-bar mario-bar"></div>
+                    <div class="game-stats-info">
+                        <h4 class="game-stats-title">Mario Kart</h4>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar mario-progress" style="width: 82%;"></div>
+                        </div>
+                        <div class="progress-bar-labels">
+                            <span class="progress-label">Active Players</span>
+                            <span class="progress-value">24,862</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Smash Bros Stats -->
+                <div class="game-stats-item">
+                    <div class="game-stats-bar smash-bar"></div>
+                    <div class="game-stats-info">
+                        <h4 class="game-stats-title">Smash Bros</h4>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar smash-progress" style="width: 65%;"></div>
+                        </div>
+                        <div class="progress-bar-labels">
+                            <span class="progress-label">Active Players</span>
+                            <span class="progress-value">19,734</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Most Played Characters -->
+                <div class="characters-section">
+                    <h4 class="characters-title">Most Played Characters</h4>
+                    <div class="characters-grid">
+                        <div class="character-item">
+                            <div class="character-icon mario-character">M</div>
+                            <div class="character-info">
+                                <p class="character-name">Mario</p>
+                                <p class="character-usage">42% usage</p>
+                            </div>
+                        </div>
+                        <div class="character-item">
+                            <div class="character-icon link-character">L</div>
+                            <div class="character-info">
+                                <p class="character-name">Link</p>
+                                <p class="character-usage">38% usage</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

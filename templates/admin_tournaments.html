@@ -1,0 +1,565 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - Tournaments{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+{% endblock %}
+
+{% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="auth-alert {% if category %}{{ category }}{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="dashboard-wrapper">
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">Tournament Management</h1>
+        <p class="dashboard-subtitle">Create and manage tournaments for the BUG Gaming Platform</p>
+        <button id="createTournamentBtn" class="primary-btn">Create New Tournament</button>
+    </div>
+    
+    <!-- Tournament Management Section -->
+    <div class="admin-section">
+        <div class="section-header">
+            <h2>All Tournaments</h2>
+            <div class="section-actions">
+                <select id="statusFilter" class="admin-select">
+                    <option value="all">All Statuses</option>
+                    <option value="upcoming">Upcoming</option>
+                    <option value="ongoing">Ongoing</option>
+                    <option value="completed">Completed</option>
+                </select>
+                <select id="gameFilter" class="admin-select">
+                    <option value="all">All Games</option>
+                    <option value="mario-kart">Mario Kart</option>
+                    <option value="smash-bros">Smash Bros</option>
+                </select>
+            </div>
+        </div>
+        
+        {% if tournaments %}
+        <div class="admin-table-container">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Game</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Spots</th>
+                        <th>Featured</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tournament in tournaments %}
+                    <tr data-status="{{ tournament.status }}" data-game="{{ tournament.game }}">
+                        <td>{{ tournament.name }}</td>
+                        <td>{% if tournament.game == 'mario-kart' %}🏎️ Mario Kart{% else %}⚔️ Smash Bros{% endif %}</td>
+                        <td>{{ tournament.date|replace('-', '/') }} {{ tournament.time }}</td>
+                        <td><span class="status-badge {{ tournament.status }}">{{ tournament.status|title }}</span></td>
+                        <td>{{ tournament.spots_used }}/{{ tournament.total_spots }}</td>
+                        <td>{% if tournament.get('featured', False) %}<span class="featured-badge">Featured</span>{% else %}No{% endif %}</td>
+                        <td class="actions-cell">
+                            <button class="action-btn edit-btn" data-id="{{ tournament.id }}">Edit</button>
+                            <button class="action-btn view-btn" data-id="{{ tournament.id }}">View</button>
+                            {% if tournament.status != 'completed' %}
+                            <button class="action-btn close-btn" data-id="{{ tournament.id }}" data-name="{{ tournament.name }}" data-game="{{ tournament.game }}">Close</button>
+                            {% endif %}
+                            <button class="action-btn delete-btn" data-id="{{ tournament.id }}">Delete</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="no-data-message">
+            <p>No tournaments have been created yet. Click the "Create New Tournament" button to get started.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Create Tournament Modal -->
+<div class="modal-overlay" id="tournamentModal">
+    <div class="modal-container large-modal">
+        <div class="modal-header">
+            <h3 class="modal-title" id="modalTitle">Create New Tournament</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-content">
+            <form id="tournamentForm" class="admin-form">
+                <input type="hidden" id="tournamentId" name="tournamentId">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tournamentName">Tournament Name*</label>
+                        <input type="text" id="tournamentName" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="gameType">Game*</label>
+                        <select id="gameType" name="game" required>
+                            <option value="mario-kart">Mario Kart</option>
+                            <option value="smash-bros">Smash Bros</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tournamentDate">Date*</label>
+                        <input type="date" id="tournamentDate" name="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="tournamentTime">Time*</label>
+                        <input type="time" id="tournamentTime" name="time" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="totalSpots">Total Spots*</label>
+                        <input type="number" id="totalSpots" name="total_spots" min="2" max="128" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="prizePool">Prize Pool</label>
+                        <input type="text" id="prizePool" name="prize_pool" placeholder="e.g. $100">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="description">Description*</label>
+                    <textarea id="description" name="description" rows="4" required></textarea>
+                </div>
+                
+                <div class="form-row checkbox-row">
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="featuredTournament" name="featured">
+                        <label for="featuredTournament">Featured Tournament</label>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="cancel-btn">Cancel</button>
+                    <button type="submit" class="submit-btn">Save Tournament</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal-container small-modal">
+        <div class="modal-header">
+            <h3 class="modal-title">Confirm Deletion</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-content">
+            <p>Are you sure you want to delete this tournament? This action cannot be undone.</p>
+            <p class="tournament-name-display"></p>
+            
+            <div class="form-actions">
+                <button type="button" class="cancel-btn">Cancel</button>
+                <button type="button" class="delete-confirm-btn">Delete Tournament</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Close Tournament Modal -->
+<div class="modal-overlay" id="closeTournamentModal">
+    <div class="modal-container large-modal">
+        <div class="modal-header">
+            <h3 class="modal-title">Close Tournament</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-content">
+            <p>You are about to close the tournament: <span id="closeTournamentName" class="tournament-name-display"></span></p>
+            <p>This will mark the tournament as completed and update player statistics. Please select a winner and assign points to participants.</p>
+            
+            <div class="admin-form">
+                <div class="form-group">
+                    <label for="tournamentWinner">Tournament Winner</label>
+                    <select id="tournamentWinner" class="admin-select">
+                        <option value="">Select Winner</option>
+                        <!-- Participants will be loaded here -->
+                    </select>
+                </div>
+                
+                <div class="admin-table-container" id="participantsTableContainer">
+                    <table class="admin-table" id="participantsTable">
+                        <thead>
+                            <tr>
+                                <th>Player</th>
+                                <th>Gamertag</th>
+                                <th>Position</th>
+                                <th>Points</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Participants will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="cancel-btn" id="cancelCloseTournament">Cancel</button>
+                    <button type="button" class="submit-btn" id="confirmCloseTournament">Close Tournament</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Elements
+        const tournamentModal = document.getElementById('tournamentModal');
+        const deleteModal = document.getElementById('deleteModal');
+        const closeTournamentModal = document.getElementById('closeTournamentModal');
+        const createTournamentBtn = document.getElementById('createTournamentBtn');
+        const closeButtons = document.querySelectorAll('.modal-close, .cancel-btn');
+        const tournamentForm = document.getElementById('tournamentForm');
+        const deleteConfirmBtn = document.querySelector('.delete-confirm-btn');
+        const statusFilter = document.getElementById('statusFilter');
+        const gameFilter = document.getElementById('gameFilter');
+        const editButtons = document.querySelectorAll('.edit-btn');
+        const deleteButtons = document.querySelectorAll('.delete-btn');
+        const closeButtons_tournament = document.querySelectorAll('.close-btn');
+        const confirmCloseTournament = document.getElementById('confirmCloseTournament');
+        const cancelCloseTournament = document.getElementById('cancelCloseTournament');
+        const tournamentWinner = document.getElementById('tournamentWinner');
+        
+        let currentTournamentId = null;
+        let currentTournamentGame = null;
+        let participants = [];
+        
+        // Filters
+        function applyFilters() {
+            const statusValue = statusFilter.value;
+            const gameValue = gameFilter.value;
+            const rows = document.querySelectorAll('.admin-table tbody tr');
+            
+            rows.forEach(row => {
+                const statusMatch = statusValue === 'all' || row.dataset.status === statusValue;
+                const gameMatch = gameValue === 'all' || row.dataset.game === gameValue;
+                
+                if (statusMatch && gameMatch) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+        
+        statusFilter.addEventListener('change', applyFilters);
+        gameFilter.addEventListener('change', applyFilters);
+        
+        // Modal Functions
+        function openModal(modal) {
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeModal(modal) {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+            if (modal === tournamentModal) {
+                tournamentForm.reset();
+                document.getElementById('tournamentId').value = '';
+                document.getElementById('modalTitle').textContent = 'Create New Tournament';
+            }
+        }
+        
+        // Open create tournament modal
+        createTournamentBtn.addEventListener('click', function() {
+            // Set default date to tomorrow
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const dateString = tomorrow.toISOString().split('T')[0];
+            document.getElementById('tournamentDate').value = dateString;
+            
+            // Set default time to 7:00 PM
+            document.getElementById('tournamentTime').value = '19:00';
+            
+            // Set default total spots to 16
+            document.getElementById('totalSpots').value = 16;
+            
+            openModal(tournamentModal);
+        });
+        
+        // Close modals
+        modalCloseButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const modal = this.closest('.modal-overlay');
+                closeModal(modal);
+            });
+        });
+        
+        // Close modal when clicking outside
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeModal(this);
+                }
+            });
+        });
+        
+        // Form submission
+        tournamentForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const tournamentData = {
+                name: formData.get('name'),
+                game: formData.get('game'),
+                date: formData.get('date'),
+                time: formData.get('time'),
+                total_spots: parseInt(formData.get('total_spots')),
+                prize_pool: formData.get('prize_pool'),
+                description: formData.get('description'),
+                featured: formData.has('featured')
+            };
+            
+            const tournamentId = formData.get('tournamentId');
+            const isEdit = tournamentId && tournamentId.trim() !== '';
+            
+            // API endpoint
+            const url = isEdit 
+                ? `/api/admin/tournaments/${tournamentId}` 
+                : '/api/admin/tournaments';
+            
+            const method = isEdit ? 'PUT' : 'POST';
+            
+            // Submit data
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(tournamentData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Reload page to show updated data
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while saving the tournament.');
+            });
+        });
+        
+        // Edit tournament
+        editButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const tournamentId = this.dataset.id;
+                
+                // Fetch tournament data
+                fetch(`/api/admin/tournaments/${tournamentId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const tournament = data.tournament;
+                        
+                        // Populate form
+                        document.getElementById('tournamentId').value = tournamentId;
+                        document.getElementById('tournamentName').value = tournament.name;
+                        document.getElementById('gameType').value = tournament.game;
+                        document.getElementById('tournamentDate').value = tournament.date;
+                        document.getElementById('tournamentTime').value = tournament.time.replace(/:/g, ':').substring(0, 5);
+                        document.getElementById('totalSpots').value = tournament.total_spots;
+                        document.getElementById('prizePool').value = tournament.prize_pool;
+                        document.getElementById('description').value = tournament.description;
+                        document.getElementById('featuredTournament').checked = tournament.featured || false;
+                        
+                        // Update modal title
+                        document.getElementById('modalTitle').textContent = 'Edit Tournament';
+                        
+                        // Open modal
+                        openModal(tournamentModal);
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while fetching tournament data.');
+                });
+            });
+        });
+        
+        // Delete tournament
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const tournamentId = this.dataset.id;
+                currentTournamentId = tournamentId;
+                
+                // Get tournament name
+                const tournamentName = this.closest('tr').querySelector('td:first-child').textContent;
+                document.querySelector('.tournament-name-display').textContent = tournamentName;
+                
+                // Open delete confirmation modal
+                openModal(deleteModal);
+            });
+        });
+        
+        // Close tournament
+        closeButtons_tournament.forEach(button => {
+            button.addEventListener('click', function() {
+                const tournamentId = this.dataset.id;
+                const tournamentName = this.dataset.name;
+                const gameType = this.dataset.game;
+                
+                currentTournamentId = tournamentId;
+                currentTournamentGame = gameType;
+                
+                // Set tournament name in modal
+                document.getElementById('closeTournamentName').textContent = tournamentName;
+                
+                // Fetch participants for this tournament
+                fetch(`/api/admin/tournaments/${tournamentId}/participants`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            participants = data.participants;
+                            
+                            // Populate winner dropdown
+                            const winnerSelect = document.getElementById('tournamentWinner');
+                            winnerSelect.innerHTML = '<option value="">Select Winner</option>';
+                            
+                            participants.forEach(participant => {
+                                const option = document.createElement('option');
+                                option.value = participant.user_id;
+                                option.textContent = `${participant.display_name} (${participant.gamertag})`;
+                                winnerSelect.appendChild(option);
+                            });
+                            
+                            // Populate participants table
+                            const tbody = document.querySelector('#participantsTable tbody');
+                            tbody.innerHTML = '';
+                            
+                            participants.forEach(participant => {
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td>${participant.display_name}</td>
+                                    <td>${participant.gamertag}</td>
+                                    <td>
+                                        <input type="number" class="position-input" data-user-id="${participant.user_id}" min="1" value="">
+                                    </td>
+                                    <td>
+                                        <input type="number" class="points-input" data-user-id="${participant.user_id}" min="0" value="0">
+                                    </td>
+                                `;
+                                tbody.appendChild(row);
+                            });
+                            
+                            // Open modal
+                            openModal(closeTournamentModal);
+                        } else {
+                            alert('Error: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while fetching tournament participants.');
+                    });
+            });
+        });
+        
+        // Confirm delete
+        deleteConfirmBtn.addEventListener('click', function() {
+            if (!currentTournamentId) return;
+            
+            fetch(`/api/admin/tournaments/${currentTournamentId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Reload page to show updated data
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                    closeModal(deleteModal);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while deleting the tournament.');
+                closeModal(deleteModal);
+            });
+        });
+        
+        // Cancel close tournament
+        cancelCloseTournament.addEventListener('click', function() {
+            closeModal(closeTournamentModal);
+        });
+        
+        // Confirm close tournament
+        confirmCloseTournament.addEventListener('click', function() {
+            if (!currentTournamentId) return;
+            
+            const winnerId = tournamentWinner.value;
+            
+            // Get results from inputs
+            const results = [];
+            const positionInputs = document.querySelectorAll('.position-input');
+            const pointsInputs = document.querySelectorAll('.points-input');
+            
+            positionInputs.forEach((input, index) => {
+                const userId = input.dataset.userId;
+                const position = input.value ? parseInt(input.value) : null;
+                const points = parseInt(pointsInputs[index].value) || 0;
+                
+                results.push({
+                    user_id: userId,
+                    position: position,
+                    points: points
+                });
+            });
+            
+            // Send request to close tournament
+            fetch(`/api/admin/tournaments/${currentTournamentId}/close`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    winner_id: winnerId,
+                    results: results
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Reload page to show updated data
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                    closeModal(closeTournamentModal);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while closing the tournament.');
+                closeModal(closeTournamentModal);
+            });
+        });
+    });
+</script>
+{% endblock %}

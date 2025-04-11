@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}GameLeader{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/leaderboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tournaments.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="game-dashboard">
+    <!-- Theme toggle button -->
+    <button class="theme-toggle" id="themeToggle">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="theme-icon">
+            <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" />
+        </svg>
+    </button>
+
+    <!-- Top Navigation Bar -->
+    <div class="top-navbar">
+        <div class="navbar-brand">
+            <div class="trophy-icon-brand">🏆</div>
+            <h1>GameLeader</h1>
+        </div>
+        
+        <!-- Search Bar -->
+        <div class="search-container">
+            <div class="search-icon">🔍</div>
+            <input type="text" placeholder="Search games or players..." class="search-input">
+        </div>
+        
+        <!-- Navigation Links -->
+        <div class="navbar-actions">
+            <div class="navbar-icon">🔔</div>
+            <div class="navbar-icon">⚙️</div>
+            <div class="user-profile">
+                <div class="user-avatar">👤</div>
+                <span class="user-name">{% if 'user_id' in session %}{{ session.get('user_name', 'User') }}{% else %}Profile{% endif %}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <nav class="sidebar-nav">
+                <ul>
+                    <li>
+                        <a href="{{ url_for('home_page') }}" class="nav-item {% if request.endpoint == 'home_page' %}active{% endif %}">
+                            <span class="nav-icon">📊</span>
+                            <span class="nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('leaderboard_page') }}" class="nav-item {% if request.endpoint == 'leaderboard_page' %}active{% endif %}">
+                            <span class="nav-icon">🏆</span>
+                            <span class="nav-text">Leaderboards</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-item">
+                            <span class="nav-icon">👥</span>
+                            <span class="nav-text">Players</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-item">
+                            <span class="nav-icon">📈</span>
+                            <span class="nav-text">Statistics</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('tournaments_page') }}" class="nav-item {% if request.endpoint == 'tournaments_page' %}active{% endif %}">
+                            <span class="nav-icon">🏅</span>
+                            <span class="nav-text">Tournaments</span>
+                        </a>
+                    </li>
+                </ul>
+                
+                <!-- Sidebar footer removed -->
+            </nav>
+        </div>
+
+        <!-- Main content -->
+        <div class="main-content">
+            <!-- Content area -->
+            <div class="content-area">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggle = document.getElementById('themeToggle');
+            const body = document.body;
+            
+            // Check for saved theme preference
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'light') {
+                body.classList.add('light-theme');
+            }
+            
+            // Toggle theme on button click
+            themeToggle.addEventListener('click', function() {
+                body.classList.toggle('light-theme');
+                const currentTheme = body.classList.contains('light-theme') ? 'light' : 'dark';
+                localStorage.setItem('theme', currentTheme);
+            });
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
