@@ -30,7 +30,8 @@ class UserStatsService:
         """
         try:
             # Query user stats sorted by wins for the specific game
-            stats_query = self.user_stats_ref.where(f'games.{game_type}.played', '>', 0).order_by(f'games.{game_type}.wins', direction='DESCENDING').limit(limit)
+            game_path = f'games.{game_type}'
+            stats_query = self.user_stats_ref.where(f'{game_path}.played', '>', 0).order_by(f'{game_path}.wins', direction='DESCENDING').limit(limit)
             
             leaderboard = []
             for doc in stats_query.stream():
