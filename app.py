@@ -369,14 +369,13 @@ def init_user_stats():
     # Initialize sample user stats
     user_stats_service.initialize_sample_stats()
 
+# Initialize data for both local development and Vercel deployment
+# Initialize admin user
+init_admin_user()
+
+# Initialize user stats
+init_user_stats()
+
 if __name__ == '__main__':
-    # Initialize sample tournament data
-    #tournament_service.init_tournament_data()
-
-    # Initialize admin user
-    init_admin_user()
-
-    # Initialize user stats
-    init_user_stats()
-
+    # Run the app only when executed directly (not when imported by vercel_app.py)
     app.run(debug=True)
