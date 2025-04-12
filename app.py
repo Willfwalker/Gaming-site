@@ -15,6 +15,29 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'dev-secret-key')
 
+# Add error handlers for better debugging
+@app.errorhandler(404)
+def page_not_found(e):
+    return jsonify({
+        'error': 'Not Found',
+        'message': 'The requested URL was not found on the server.',
+        'status_code': 404,
+        'path': request.path,
+        'method': request.method,
+        'env': os.environ.get('VERCEL_ENV', 'development')
+    }), 404
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    return jsonify({
+        'error': 'Internal Server Error',
+        'message': str(e),
+        'status_code': 500,
+        'path': request.path,
+        'method': request.method,
+        'env': os.environ.get('VERCEL_ENV', 'development')
+    }), 500
+
 firebase_auth = FirebaseAuthService(app)
 
 # Initialize Firestore database
@@ -37,6 +60,15 @@ def inject_admin_status():
 @app.route('/', methods=['GET'])
 def home():
     return redirect(url_for('home_page'))
+
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    return jsonify({
+        'status': 'ok',
+        'message': 'Service is running',
+        'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'environment': os.environ.get('VERCEL_ENV', 'development')
+    })
 
 # Authentication routes
 @app.route('/login', methods=['GET', 'POST'])
