@@ -37,24 +37,17 @@ class FirebaseAuthService:
         # Initialize Firebase Admin SDK if not already initialized
         if not self.firebase_app and not firebase_admin._apps:
             try:
-                # Check if we're in Vercel environment with JSON credentials as env var
-                firebase_credentials_json = os.getenv('FIREBASE_CREDENTIALS_JSON')
+                # Get the path to the Firebase service account file
+                firebase_service_account = os.getenv('FIREBASE_SERVICE_ACCOUNT', 'bug-site-firebase-adminsdk-fbsvc-38e4147289.json')
 
-                if firebase_credentials_json:
-                    # Parse the JSON string from environment variable
-                    try:
-                        cred_dict = json.loads(firebase_credentials_json)
-                        cred = credentials.Certificate(cred_dict)
-                        print("Using Firebase credentials from environment variable")
-                    except json.JSONDecodeError:
-                        print("Error parsing Firebase credentials JSON from environment")
-                        raise
-                else:
-                    # Get the path to the Firebase service account file for local development
-                    firebase_service_account = os.getenv('FIREBASE_SERVICE_ACCOUNT', 'bug-site-firebase-adminsdk-fbsvc-38e4147289.json')
+                # Check if the file exists
+                if os.path.exists(firebase_service_account):
+                    print(f"Using Firebase credentials from file: {firebase_service_account}")
                     # Create credentials from the service account file
                     cred = credentials.Certificate(firebase_service_account)
-                    print(f"Using Firebase credentials from file: {firebase_service_account}")
+                else:
+                    print(f"Firebase credentials file not found: {firebase_service_account}")
+                    raise FileNotFoundError(f"Firebase credentials file not found: {firebase_service_account}")
 
                 self.firebase_app = firebase_admin.initialize_app(cred)
                 print("Firebase Admin SDK initialized successfully")
