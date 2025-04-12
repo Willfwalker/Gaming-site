@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - Edit Announcement{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+{% endblock %}
+
+{% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="auth-alert {% if category %}{{ category }}{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="admin-container">
+    <!-- Admin Navigation Bar -->
+    <div class="admin-nav">
+        <div class="admin-nav-title">Admin Panel</div>
+        <div class="admin-nav-links">
+            <a href="{{ url_for('admin_tournaments_page') }}" class="admin-nav-link">Tournaments</a>
+            <a href="{{ url_for('admin_announcements_page') }}" class="admin-nav-link active">Announcements</a>
+        </div>
+    </div>
+
+    <div class="admin-header">
+        <h1 class="admin-title">Edit Announcement</h1>
+        <a href="{{ url_for('admin_announcements_page') }}" class="admin-button back-button">Back to Announcements</a>
+    </div>
+
+    <div class="admin-content">
+        <form action="{{ url_for('admin_edit_announcement', announcement_id=announcement.id) }}" method="POST" class="announcement-form">
+            <div class="form-group">
+                <label for="title" class="form-label">Title</label>
+                <input type="text" id="title" name="title" class="form-input" value="{{ announcement.title }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="content" class="form-label">Content</label>
+                <textarea id="content" name="content" class="form-textarea" rows="6" required>{{ announcement.content }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="importance" class="form-label">Importance</label>
+                <select id="importance" name="importance" class="form-select">
+                    <option value="normal" {% if announcement.importance == 'normal' %}selected{% endif %}>Normal</option>
+                    <option value="important" {% if announcement.importance == 'important' %}selected{% endif %}>Important</option>
+                    <option value="urgent" {% if announcement.importance == 'urgent' %}selected{% endif %}>Urgent</option>
+                </select>
+            </div>
+
+            <div class="form-info">
+                <p>Created at: {{ announcement.created_at }}</p>
+                <p>Last updated: {{ announcement.updated_at }}</p>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="admin-button save-button">Save Changes</button>
+                <a href="{{ url_for('admin_announcements_page') }}" class="admin-button cancel-button">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .admin-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 1.5rem;
+        background-color: var(--card-bg);
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .admin-title {
+        font-size: 1.75rem;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .admin-button {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        background-color: var(--admin-primary);
+        color: white;
+        border-radius: 0.375rem;
+        text-decoration: none;
+        font-weight: 500;
+        transition: background-color 0.15s ease-in-out;
+        border: none;
+        cursor: pointer;
+    }
+
+    .admin-button:hover {
+        background-color: var(--admin-primary-hover);
+    }
+
+    .back-button {
+        background-color: var(--admin-dark);
+    }
+
+    .back-button:hover {
+        background-color: var(--admin-dark);
+    }
+
+    .save-button {
+        background-color: var(--admin-success);
+    }
+
+    .save-button:hover {
+        background-color: var(--admin-success);
+    }
+
+    .cancel-button {
+        background-color: var(--admin-dark);
+    }
+
+    .cancel-button:hover {
+        background-color: var(--admin-dark);
+    }
+
+    .announcement-form {
+        margin-top: 1.5rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: var(--text-primary);
+    }
+
+    .form-input,
+    .form-textarea,
+    .form-select {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid var(--border-color);
+        border-radius: 0.375rem;
+        background-color: var(--bg-input);
+        color: var(--text-primary);
+        font-size: 1rem;
+        transition: border-color 0.15s ease-in-out;
+    }
+
+    .form-input:focus,
+    .form-textarea:focus,
+    .form-select:focus {
+        outline: none;
+        border-color: var(--border-focus);
+    }
+
+    .form-textarea {
+        resize: vertical;
+    }
+
+    .form-info {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        background-color: var(--bg-secondary);
+        border-radius: 0.375rem;
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+    }
+
+    .form-info p {
+        margin: 0.25rem 0;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,452 @@
+{% extends "base.html" %}
+
+{% block title %}Players - GameLeader{% endblock %}
+
+{% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="auth-alert {% if category %}{{ category }}{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="players-wrapper">
+    <div class="players-header">
+        <h1 class="players-title">Players Directory</h1>
+        <p class="players-subtitle">View all registered players and their statistics</p>
+    </div>
+
+    <div class="players-filters">
+        <div class="filter-group">
+            <label for="gameFilter">Filter by Game:</label>
+            <select id="gameFilter" class="filter-select">
+                <option value="all">All Games</option>
+                <option value="mario-kart">Mario Kart</option>
+                <option value="smash-bros">Smash Bros</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="sortBy">Sort by:</label>
+            <select id="sortBy" class="filter-select">
+                <option value="points">Points</option>
+                <option value="wins">Wins</option>
+                <option value="games">Games Played</option>
+                <option value="win_percentage">Win Percentage</option>
+            </select>
+        </div>
+        <div class="search-group">
+            <input type="text" id="playerSearch" class="search-input" placeholder="Search players...">
+            <button id="searchBtn" class="search-btn">Search</button>
+        </div>
+    </div>
+
+    <div class="players-table-container">
+        <table class="players-table">
+            <thead>
+                <tr>
+                    <th class="rank-column">Rank</th>
+                    <th class="player-column">Player</th>
+                    <th class="primary-game-column">Primary Game</th>
+                    <th class="games-column">Games</th>
+                    <th class="wins-column">Wins</th>
+                    <th class="win-rate-column">Win Rate</th>
+                    <th class="points-column">Points</th>
+                </tr>
+            </thead>
+            <tbody id="playersTableBody">
+                {% if players %}
+                    {% for player in players %}
+                    <tr data-primary-game="{{ player.primary_game }}">
+                        <td class="rank-column">
+                            <span class="rank-badge rank-{{ loop.index }}">{{ loop.index }}</span>
+                        </td>
+                        <td class="player-column">
+                            <div class="player-info">
+                                <div class="player-avatar">{{ player.display_name[0] | upper }}</div>
+                                <div class="player-details">
+                                    <div class="player-name">{{ player.display_name }}</div>
+                                    <div class="player-joined">Joined: {{ player.created_at }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="primary-game-column">
+                            <span class="game-badge {{ player.primary_game }}">{{ player.primary_game_name }}</span>
+                        </td>
+                        <td class="games-column">{{ player.total_games }}</td>
+                        <td class="wins-column">{{ player.total_wins }}</td>
+                        <td class="win-rate-column">{{ player.win_percentage }}%</td>
+                        <td class="points-column">{{ player.points }}</td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="7" class="no-data">No players found</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .players-wrapper {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    .players-header {
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+    .players-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .players-subtitle {
+        font-size: 1rem;
+        color: var(--text-secondary);
+    }
+
+    .players-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background-color: var(--card-bg);
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .filter-group label {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+
+    .filter-select {
+        padding: 0.5rem;
+        border: 1px solid var(--border-color);
+        border-radius: 0.375rem;
+        background-color: var(--input-bg);
+        color: var(--text-primary);
+        font-size: 0.875rem;
+    }
+
+    .search-group {
+        display: flex;
+        flex-grow: 1;
+        gap: 0.5rem;
+    }
+
+    .search-input {
+        flex-grow: 1;
+        padding: 0.5rem 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 0.375rem;
+        background-color: var(--input-bg);
+        color: var(--text-primary);
+        font-size: 0.875rem;
+    }
+
+    .search-btn {
+        padding: 0.5rem 1rem;
+        background-color: var(--smash-color);
+        color: white;
+        border: none;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    .search-btn:hover {
+        background-color: var(--smash-color);
+    }
+
+    .players-table-container {
+        background-color: var(--card-bg);
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .players-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .players-table th {
+        padding: 1rem;
+        text-align: left;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        background-color: var(--bg-secondary);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .players-table td {
+        padding: 1rem;
+        font-size: 0.875rem;
+        color: var(--text-primary);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .players-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .players-table tr:hover td {
+        background-color: var(--bg-hover);
+    }
+
+    .rank-column {
+        width: 70px;
+        text-align: center;
+    }
+
+    .rank-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: white;
+    }
+
+    .rank-badge.rank-1 {
+        background-color: #ffd700; /* Gold */
+    }
+
+    .rank-badge.rank-2 {
+        background-color: #c0c0c0; /* Silver */
+    }
+
+    .rank-badge.rank-3 {
+        background-color: #cd7f32; /* Bronze */
+    }
+
+    .rank-badge:not(.rank-1):not(.rank-2):not(.rank-3) {
+        background-color: var(--bg-secondary);
+        color: var(--text-secondary);
+    }
+
+    .player-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .player-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: var(--smash-color);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    .player-details {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .player-name {
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .player-joined {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+    }
+
+    .game-badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    .game-badge.mario-kart {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+    }
+
+    .game-badge.smash-bros {
+        background-color: rgba(59, 130, 246, 0.1);
+        color: #3b82f6;
+    }
+
+    .wins-column, .games-column, .win-rate-column, .points-column {
+        text-align: center;
+    }
+
+    .points-column {
+        font-weight: 600;
+    }
+
+    .no-data {
+        text-align: center;
+        color: var(--text-secondary);
+        padding: 2rem !important;
+    }
+
+    @media (max-width: 768px) {
+        .players-filters {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .search-group {
+            width: 100%;
+        }
+
+        .players-table th, .players-table td {
+            padding: 0.75rem 0.5rem;
+        }
+
+        .primary-game-column, .games-column, .win-rate-column {
+            display: none;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const gameFilter = document.getElementById('gameFilter');
+        const sortBy = document.getElementById('sortBy');
+        const playerSearch = document.getElementById('playerSearch');
+        const searchBtn = document.getElementById('searchBtn');
+        const playersTableBody = document.getElementById('playersTableBody');
+
+        // Store original table rows for filtering
+        const originalRows = Array.from(playersTableBody.querySelectorAll('tr'));
+
+        // Get search parameter from URL if present
+        const urlParams = new URLSearchParams(window.location.search);
+        const searchParam = urlParams.get('search');
+        if (searchParam) {
+            playerSearch.value = searchParam;
+        }
+
+        // Function to filter and sort players
+        function filterAndSortPlayers() {
+            const gameValue = gameFilter.value;
+            const sortValue = sortBy.value;
+            const searchValue = playerSearch.value.toLowerCase();
+
+            // Filter rows
+            let filteredRows = originalRows.filter(row => {
+                // Game filter
+                if (gameValue !== 'all') {
+                    const primaryGame = row.getAttribute('data-primary-game');
+                    if (primaryGame !== gameValue) {
+                        return false;
+                    }
+                }
+
+                // Search filter
+                if (searchValue) {
+                    const playerName = row.querySelector('.player-name').textContent.toLowerCase();
+                    if (!playerName.includes(searchValue)) {
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
+            // Sort rows
+            filteredRows.sort((a, b) => {
+                let valueA, valueB;
+
+                if (sortValue === 'points') {
+                    valueA = parseInt(a.querySelector('.points-column').textContent);
+                    valueB = parseInt(b.querySelector('.points-column').textContent);
+                } else if (sortValue === 'wins') {
+                    valueA = parseInt(a.querySelector('.wins-column').textContent);
+                    valueB = parseInt(b.querySelector('.wins-column').textContent);
+                } else if (sortValue === 'games') {
+                    valueA = parseInt(a.querySelector('.games-column').textContent);
+                    valueB = parseInt(b.querySelector('.games-column').textContent);
+                } else if (sortValue === 'win_percentage') {
+                    valueA = parseFloat(a.querySelector('.win-rate-column').textContent);
+                    valueB = parseFloat(b.querySelector('.win-rate-column').textContent);
+                }
+
+                return valueB - valueA; // Descending order
+            });
+
+            // Update rank badges
+            filteredRows.forEach((row, index) => {
+                const rankBadge = row.querySelector('.rank-badge');
+                rankBadge.textContent = index + 1;
+                rankBadge.className = 'rank-badge';
+
+                if (index === 0) {
+                    rankBadge.classList.add('rank-1');
+                } else if (index === 1) {
+                    rankBadge.classList.add('rank-2');
+                } else if (index === 2) {
+                    rankBadge.classList.add('rank-3');
+                } else {
+                    rankBadge.classList.add(`rank-${index + 1}`);
+                }
+            });
+
+            // Clear table
+            playersTableBody.innerHTML = '';
+
+            // Add filtered and sorted rows
+            if (filteredRows.length > 0) {
+                filteredRows.forEach(row => {
+                    playersTableBody.appendChild(row);
+                });
+            } else {
+                // No results
+                const noDataRow = document.createElement('tr');
+                noDataRow.innerHTML = '<td colspan="7" class="no-data">No players match your filters</td>';
+                playersTableBody.appendChild(noDataRow);
+            }
+        }
+
+        // Add event listeners
+        gameFilter.addEventListener('change', filterAndSortPlayers);
+        sortBy.addEventListener('change', filterAndSortPlayers);
+        searchBtn.addEventListener('click', filterAndSortPlayers);
+        playerSearch.addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') {
+                filterAndSortPlayers();
+            }
+        });
+
+        // Trigger filter if search parameter is present
+        if (searchParam) {
+            filterAndSortPlayers();
+        }
+    });
+</script>
+{% endblock %}

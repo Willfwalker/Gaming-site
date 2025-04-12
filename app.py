@@ -5,6 +5,7 @@ from datetime import datetime
 from services.firebase_auth_service import FirebaseAuthService
 from services.tournament_service import TournamentService
 from services.user_stats_service import UserStatsService
+from services.announcement_service import AnnouncementService
 from dotenv import load_dotenv
 import firebase_admin
 from firebase_admin import auth, firestore
@@ -22,10 +23,20 @@ db = firestore.client()
 # Initialize services
 tournament_service = TournamentService(db)
 user_stats_service = UserStatsService(db)
+announcement_service = AnnouncementService(db)
+
+# Context processor to add admin status to all templates
+@app.context_processor
+def inject_admin_status():
+    if 'user_id' in session:
+        user_id = session.get('user_id')
+        is_admin = tournament_service.is_admin(user_id)
+        return {'is_admin': is_admin}
+    return {'is_admin': False}
 
 @app.route('/', methods=['GET'])
 def home():
-    return redirect(url_for('leaderboard_page'))
+    return redirect(url_for('home_page'))
 
 # Authentication routes
 @app.route('/login', methods=['GET', 'POST'])
@@ -41,7 +52,7 @@ def login_view():
             user = auth.get_user_by_email(email)
             session['user_id'] = user.uid
 
-            return redirect(url_for('leaderboard_page'))
+            return redirect(url_for('home_page'))
         except Exception as e:
             return render_template('login.html', error=str(e))
 
@@ -93,22 +104,85 @@ def logout_page():
 @app.route('/')
 @app.route('/home')
 def home_page():
-    return render_template('home.html')
+    # Check if user is logged in
+    if 'user_id' not in session:
+        flash('Please login to access the dashboard', 'error')
+        return redirect(url_for('login_view'))
+
+    # Get user ID from session
+    user_id = session.get('user_id')
+
+    # Get game player counts
+    player_counts = user_stats_service.get_game_player_counts()
+
+    # Get top players
+    top_players = user_stats_service.get_top_players(limit=3)
+
+    # Get game statistics
+    game_stats = user_stats_service.get_game_statistics()
+
+    # Get upcoming tournaments
+    tournaments, featured_tournament = tournament_service.get_all_tournaments()
+    upcoming_tournaments = [t for t in tournaments if t.get('status') == 'upcoming']
+
+    # Get user's stats
+    user_stats = user_stats_service.get_user_stats(user_id)
+
+    # Get announcements
+    announcements = announcement_service.get_all_announcements(limit=3)
+
+    return render_template('home.html',
+                           player_counts=player_counts,
+                           top_players=top_players,
+                           game_stats=game_stats,
+                           upcoming_tournaments=upcoming_tournaments[:3],
+                           featured_tournament=featured_tournament,
+                           user_stats=user_stats,
+                           announcements=announcements)
 
 @app.route('/leaderboard', methods=['GET'])
-def leaderboard_page():
+@app.route('/leaderboard/<game_type>', methods=['GET'])
+def leaderboard_page(game_type=None):
     # Check if user is logged in
     if 'user_id' not in session:
         flash('Please login to access the leaderboard', 'error')
         return redirect(url_for('login_view'))
 
-    # Get leaderboards for each game type
-    mario_kart_leaderboard = user_stats_service.get_leaderboard('mario-kart', 5)
-    smash_bros_leaderboard = user_stats_service.get_leaderboard('smash-bros', 5)
+    # If a specific game type is provided, only get that leaderboard
+    if game_type:
+        if game_type == 'mario-kart':
+            mario_kart_leaderboard = user_stats_service.get_leaderboard('mario-kart', 10)
+            smash_bros_leaderboard = None
+            active_game = 'mario-kart'
+        elif game_type == 'smash-bros':
+            mario_kart_leaderboard = None
+            smash_bros_leaderboard = user_stats_service.get_leaderboard('smash-bros', 10)
+            active_game = 'smash-bros'
+        else:
+            # Invalid game type, redirect to main leaderboard
+            return redirect(url_for('leaderboard_page'))
+    else:
+        # Get leaderboards for each game type
+        mario_kart_leaderboard = user_stats_service.get_leaderboard('mario-kart', 5)
+        smash_bros_leaderboard = user_stats_service.get_leaderboard('smash-bros', 5)
+        active_game = None
 
     return render_template('leaderboard.html',
                            mario_kart_leaderboard=mario_kart_leaderboard,
-                           smash_bros_leaderboard=smash_bros_leaderboard)
+                           smash_bros_leaderboard=smash_bros_leaderboard,
+                           active_game=active_game)
+
+@app.route('/players', methods=['GET'])
+def players_page():
+    # Check if user is logged in
+    if 'user_id' not in session:
+        flash('Please login to access players', 'error')
+        return redirect(url_for('login_view'))
+
+    # Get all players from service
+    players = user_stats_service.get_all_players()
+
+    return render_template('players.html', players=players)
 
 @app.route('/tournaments', methods=['GET'])
 def tournaments_page():
@@ -368,6 +442,190 @@ def init_user_stats():
 
     # Initialize sample user stats
     user_stats_service.initialize_sample_stats()
+
+# Admin routes for announcement management
+@app.route('/admin/announcements')
+def admin_announcements_page():
+    # Check if user is logged in and is an admin
+    if 'user_id' not in session:
+        flash('Please login to access this page', 'error')
+        return redirect(url_for('login_view'))
+
+    user_id = session.get('user_id')
+    if not tournament_service.is_admin(user_id):
+        flash('You do not have permission to access this page', 'error')
+        return redirect(url_for('home_page'))
+
+    # Get all announcements
+    announcements = announcement_service.get_all_announcements()
+
+    return render_template('admin/announcements.html', announcements=announcements)
+
+@app.route('/admin/announcements/create', methods=['GET', 'POST'])
+def admin_create_announcement():
+    # Check if user is logged in and is an admin
+    if 'user_id' not in session:
+        flash('Please login to access this page', 'error')
+        return redirect(url_for('login_view'))
+
+    user_id = session.get('user_id')
+    if not tournament_service.is_admin(user_id):
+        flash('You do not have permission to access this page', 'error')
+        return redirect(url_for('home_page'))
+
+    if request.method == 'POST':
+        # Get form data
+        title = request.form.get('title')
+        content = request.form.get('content')
+        importance = request.form.get('importance', 'normal')
+
+        # Validate form data
+        if not title or not content:
+            flash('Please fill in all required fields', 'error')
+            return render_template('admin/create_announcement.html')
+
+        # Create announcement
+        announcement_id = announcement_service.create_announcement(
+            title=title,
+            content=content,
+            created_by=user_id,
+            importance=importance
+        )
+
+        if announcement_id:
+            flash('Announcement created successfully', 'success')
+            return redirect(url_for('admin_announcements_page'))
+        else:
+            flash('Failed to create announcement', 'error')
+            return render_template('admin/create_announcement.html')
+
+    return render_template('admin/create_announcement.html')
+
+@app.route('/admin/announcements/edit/<announcement_id>', methods=['GET', 'POST'])
+def admin_edit_announcement(announcement_id):
+    # Check if user is logged in and is an admin
+    if 'user_id' not in session:
+        flash('Please login to access this page', 'error')
+        return redirect(url_for('login_view'))
+
+    user_id = session.get('user_id')
+    if not tournament_service.is_admin(user_id):
+        flash('You do not have permission to access this page', 'error')
+        return redirect(url_for('home_page'))
+
+    # Get the announcement
+    announcement = announcement_service.get_announcement(announcement_id)
+    if not announcement:
+        flash('Announcement not found', 'error')
+        return redirect(url_for('admin_announcements_page'))
+
+    if request.method == 'POST':
+        # Get form data
+        title = request.form.get('title')
+        content = request.form.get('content')
+        importance = request.form.get('importance', 'normal')
+
+        # Validate form data
+        if not title or not content:
+            flash('Please fill in all required fields', 'error')
+            return render_template('admin/edit_announcement.html', announcement=announcement)
+
+        # Update announcement
+        success = announcement_service.update_announcement(
+            announcement_id=announcement_id,
+            title=title,
+            content=content,
+            importance=importance
+        )
+
+        if success:
+            flash('Announcement updated successfully', 'success')
+            return redirect(url_for('admin_announcements_page'))
+        else:
+            flash('Failed to update announcement', 'error')
+            return render_template('admin/edit_announcement.html', announcement=announcement)
+
+    return render_template('admin/edit_announcement.html', announcement=announcement)
+
+@app.route('/admin/announcements/delete/<announcement_id>', methods=['POST'])
+def admin_delete_announcement(announcement_id):
+    # Check if user is logged in and is an admin
+    if 'user_id' not in session:
+        flash('Please login to access this page', 'error')
+        return redirect(url_for('login_view'))
+
+    user_id = session.get('user_id')
+    if not tournament_service.is_admin(user_id):
+        flash('You do not have permission to access this page', 'error')
+        return redirect(url_for('home_page'))
+
+    # Delete the announcement
+    success = announcement_service.delete_announcement(announcement_id)
+
+    if success:
+        flash('Announcement deleted successfully', 'success')
+    else:
+        flash('Failed to delete announcement', 'error')
+
+    return redirect(url_for('admin_announcements_page'))
+
+# API route to get announcements
+@app.route('/api/announcements', methods=['GET'])
+def api_get_announcements():
+    limit = request.args.get('limit', 5, type=int)
+    announcements = announcement_service.get_all_announcements(limit=limit)
+    return jsonify({'success': True, 'announcements': announcements})
+
+# API route for global search
+@app.route('/api/search', methods=['GET'])
+def api_search():
+    query = request.args.get('q', '')
+    if not query or len(query) < 2:
+        return jsonify({'success': False, 'message': 'Query too short'})
+
+    results = []
+
+    # Search for players
+    players = user_stats_service.get_all_players()
+    for player in players:
+        if query.lower() in player['display_name'].lower():
+            results.append({
+                'category': 'Players',
+                'title': player['display_name'],
+                'subtitle': f"{player['primary_game_name']} • {player['total_wins']} wins",
+                'url': f"/players?search={player['display_name']}"
+            })
+
+    # Search for tournaments
+    tournaments, _ = tournament_service.get_all_tournaments()
+    for tournament in tournaments:
+        if query.lower() in tournament['name'].lower() or query.lower() in tournament['description'].lower():
+            results.append({
+                'category': 'Tournaments',
+                'title': tournament['name'],
+                'subtitle': f"{tournament['date']} • {tournament['status']}",
+                'url': f"/tournaments?id={tournament['id']}"
+            })
+
+    # Search for games
+    games = [
+        {'id': 'mario-kart', 'name': 'Mario Kart', 'description': 'Racing game featuring Mario characters'},
+        {'id': 'smash-bros', 'name': 'Super Smash Bros', 'description': 'Fighting game with Nintendo characters'}
+    ]
+
+    for game in games:
+        if query.lower() in game['name'].lower() or query.lower() in game['description'].lower():
+            results.append({
+                'category': 'Games',
+                'title': game['name'],
+                'subtitle': game['description'],
+                'url': f"/leaderboard/{game['id']}"
+            })
+
+    # Limit results
+    results = results[:10]
+
+    return jsonify({'success': True, 'results': results})
 
 # Initialize data for both local development and Vercel deployment
 # Initialize admin user

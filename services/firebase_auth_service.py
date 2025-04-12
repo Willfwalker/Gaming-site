@@ -155,7 +155,7 @@ class FirebaseAuthService:
             if not email:
                 return jsonify({"error": "Email is required"}), 400
 
-            # In a real implementation, you would use Firebase Auth REST API
+            # In a real implementation, use Firebase Auth REST API
             # to send a password reset email
             # This is a placeholder for the actual implementation
 
@@ -286,8 +286,8 @@ class FirebaseAuthService:
             # Set session
             session['user_id'] = user.uid
 
-            # Redirect to the main page after successful login
-            return redirect(url_for('leaderboard_page'))
+            # Redirect to the dashboard page after successful login
+            return redirect(url_for('home_page'))
 
         except Exception as e:
             return jsonify({"error": str(e)}), 400

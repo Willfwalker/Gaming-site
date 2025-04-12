@@ -15,6 +15,7 @@
     {% endif %}
 {% endwith %}
 <div class="leaderboard-container">
+    {% if active_game != 'smash-bros' %}
     <div class="game-widget" id="mariokart-widget">
         <div class="widget-header">
             <h2>Mario Kart</h2>
@@ -25,6 +26,9 @@
                     </svg>
                     Refresh
                 </button>
+                {% if active_game == 'mario-kart' %}
+                <a href="{{ url_for('leaderboard_page') }}" class="back-btn">View All Games</a>
+                {% endif %}
             </div>
         </div>
         <div class="widget-content">
@@ -40,9 +44,9 @@
                 </thead>
                 <tbody>
                     {% if mario_kart_leaderboard %}
-                        {% for i, player in enumerate(mario_kart_leaderboard, 1) %}
+                        {% for player in mario_kart_leaderboard %}
                         <tr>
-                            <td class="rank">{{ i }}</td>
+                            <td class="rank">{{ loop.index }}</td>
                             <td class="player">{{ player.display_name }}</td>
                             <td class="wins">{{ player.wins }}</td>
                             <td class="losses">{{ player.losses }}</td>
@@ -58,7 +62,9 @@
             </table>
         </div>
     </div>
+    {% endif %}
 
+    {% if active_game != 'mario-kart' %}
     <div class="game-widget" id="smashbros-widget">
         <div class="widget-header">
             <h2>Smash Bros</h2>
@@ -69,6 +75,9 @@
                     </svg>
                     Refresh
                 </button>
+                {% if active_game == 'smash-bros' %}
+                <a href="{{ url_for('leaderboard_page') }}" class="back-btn">View All Games</a>
+                {% endif %}
             </div>
         </div>
         <div class="widget-content">
@@ -84,9 +93,9 @@
                 </thead>
                 <tbody>
                     {% if smash_bros_leaderboard %}
-                        {% for i, player in enumerate(smash_bros_leaderboard, 1) %}
+                        {% for player in smash_bros_leaderboard %}
                         <tr>
-                            <td class="rank">{{ i }}</td>
+                            <td class="rank">{{ loop.index }}</td>
                             <td class="player">{{ player.display_name }}</td>
                             <td class="wins">{{ player.wins }}</td>
                             <td class="losses">{{ player.losses }}</td>
@@ -102,6 +111,7 @@
             </table>
         </div>
     </div>
+    {% endif %}
 </div>
 {% endblock %}
 
@@ -122,7 +132,7 @@
             // Add loading state
             const widget = document.getElementById(`${game === 'mario-kart' ? 'mariokart' : 'smashbros'}-widget`);
             widget.classList.add('loading');
-            
+
             // Make API call to get updated leaderboard
             fetch(`/api/leaderboard/${game}`)
                 .then(response => response.json())
@@ -131,7 +141,7 @@
                         // Update the leaderboard table
                         const tbody = widget.querySelector('tbody');
                         tbody.innerHTML = '';
-                        
+
                         if (data.leaderboard && data.leaderboard.length > 0) {
                             data.leaderboard.forEach((player, index) => {
                                 const row = document.createElement('tr');
@@ -152,7 +162,7 @@
                     } else {
                         console.error('Failed to refresh leaderboard:', data.message);
                     }
-                    
+
                     // Remove loading state
                     widget.classList.remove('loading');
                 })

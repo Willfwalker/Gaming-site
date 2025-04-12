@@ -18,7 +18,7 @@
         <h1 class="dashboard-title">Gaming Dashboard</h1>
         <p class="dashboard-subtitle">Select a game to view detailed leaderboards and statistics</p>
     </div>
-    
+
     <!-- Game Widgets - Two columns -->
     <div class="game-widgets">
         <!-- Mario Kart Card -->
@@ -29,17 +29,17 @@
                     <div class="game-icon">🏎️</div>
                     <div class="player-badge">
                         <span class="player-badge-icon">👥</span>
-                        <span class="player-count">24,862</span>
+                        <span class="player-count">{{ player_counts['mario-kart'] }}</span>
                     </div>
                 </div>
                 <h3 class="game-title">Mario Kart</h3>
                 <div class="game-widget-footer">
-                    <a href="{{ url_for('leaderboard_page') }}" class="view-leaderboard-link">View Leaderboard</a>
+                    <a href="{{ url_for('leaderboard_page', game_type='mario-kart') }}" class="view-leaderboard-link">View Leaderboard</a>
                     <div class="trophy-icon">🏆</div>
                 </div>
             </div>
         </div>
-        
+
         <!-- Smash Bros Card -->
         <div class="game-widget smash-widget">
             <div class="game-widget-color-bar"></div>
@@ -48,25 +48,25 @@
                     <div class="game-icon">⚔️</div>
                     <div class="player-badge">
                         <span class="player-badge-icon">👥</span>
-                        <span class="player-count">19,734</span>
+                        <span class="player-count">{{ player_counts['smash-bros'] }}</span>
                     </div>
                 </div>
                 <h3 class="game-title">Smash Bros</h3>
                 <div class="game-widget-footer">
-                    <a href="{{ url_for('leaderboard_page') }}" class="view-leaderboard-link">View Leaderboard</a>
+                    <a href="{{ url_for('leaderboard_page', game_type='smash-bros') }}" class="view-leaderboard-link">View Leaderboard</a>
                     <div class="trophy-icon">🏆</div>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <!-- Top Players Section -->
     <div class="top-players-section">
         <div class="section-header">
             <span class="medal-icon">🏅</span>
             <h2 class="section-title">Top Players</h2>
         </div>
-        
+
         <div class="table-container">
             <table class="players-table">
                 <thead>
@@ -78,39 +78,29 @@
                     </tr>
                 </thead>
                 <tbody>
+                    {% for player in top_players %}
                     <tr>
                         <td class="rank-column">
-                            <span class="rank-badge rank-1">1</span>
+                            <span class="rank-badge rank-{{ loop.index }}">{{ loop.index }}</span>
                         </td>
-                        <td class="player-column">RainbowRoad</td>
-                        <td class="game-column">Mario Kart</td>
-                        <td class="points-column">15,423</td>
+                        <td class="player-column">{{ player.display_name }}</td>
+                        <td class="game-column">{{ player.primary_game_name }}</td>
+                        <td class="points-column">{{ player.points }}</td>
                     </tr>
+                    {% else %}
                     <tr>
-                        <td class="rank-column">
-                            <span class="rank-badge rank-1">1</span>
-                        </td>
-                        <td class="player-column">SmashKing</td>
-                        <td class="game-column">Smash Bros</td>
-                        <td class="points-column">14,982</td>
+                        <td colspan="4" class="no-data">No player data available</td>
                     </tr>
-                    <tr>
-                        <td class="rank-column">
-                            <span class="rank-badge rank-2">2</span>
-                        </td>
-                        <td class="player-column">LuigiDrift</td>
-                        <td class="game-column">Mario Kart</td>
-                        <td class="points-column">14,321</td>
-                    </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
-        
+
         <div class="view-all-container">
             <a href="{{ url_for('leaderboard_page') }}" class="view-all-link">View All Rankings</a>
         </div>
     </div>
-    
+
     <!-- Activity & Stats Sections -->
     <div class="dashboard-bottom-grid">
         <!-- Recent Activity Section -->
@@ -119,44 +109,65 @@
                 <span class="activity-icon">📈</span>
                 <h2 class="section-title">Recent Activity</h2>
             </div>
-            
+
             <div class="activity-list">
-                <div class="activity-item">
-                    <div class="activity-icon-wrapper mario-icon">🏎️</div>
-                    <div class="activity-content">
-                        <p class="activity-title">New tournament announced</p>
-                        <p class="activity-subtitle">Mario Kart Grand Prix</p>
-                    </div>
-                    <span class="activity-time">2h ago</span>
-                </div>
-                
-                <div class="activity-item">
-                    <div class="activity-icon-wrapper smash-icon">⚔️</div>
-                    <div class="activity-content">
-                        <p class="activity-title">SmashKing broke a record</p>
-                        <p class="activity-subtitle">Highest KO count in Smash Bros</p>
-                    </div>
-                    <span class="activity-time">5h ago</span>
-                </div>
-                
+                {% if upcoming_tournaments %}
+                {% for tournament in upcoming_tournaments %}
                 <div class="activity-item">
                     <div class="activity-icon-wrapper trophy-icon-wrapper">🏆</div>
                     <div class="activity-content">
-                        <p class="activity-title">Weekly challenge update</p>
-                        <p class="activity-subtitle">New objectives for Mario Kart</p>
+                        <p class="activity-title">{{ tournament.name }}</p>
+                        <p class="activity-subtitle">{{ tournament.description }}</p>
                     </div>
-                    <span class="activity-time">1d ago</span>
+                    <span class="activity-time">{{ tournament.date }}</span>
                 </div>
+                {% endfor %}
+                {% else %}
+                <div class="activity-item">
+                    <div class="activity-icon-wrapper trophy-icon-wrapper">🏆</div>
+                    <div class="activity-content">
+                        <p class="activity-title">No upcoming tournaments</p>
+                        <p class="activity-subtitle">Check back later for updates</p>
+                    </div>
+                    <span class="activity-time">Now</span>
+                </div>
+                {% endif %}
+
+                {% if game_stats['mario-kart']['recent_matches'] %}
+                {% for match in game_stats['mario-kart']['recent_matches'][:1] %}
+                <div class="activity-item">
+                    <div class="activity-icon-wrapper mario-icon">🏎️</div>
+                    <div class="activity-content">
+                        <p class="activity-title">Recent Mario Kart match</p>
+                        <p class="activity-subtitle">{{ match.player }}</p>
+                    </div>
+                    <span class="activity-time">{{ match.date }}</span>
+                </div>
+                {% endfor %}
+                {% endif %}
+
+                {% if game_stats['smash-bros']['recent_matches'] %}
+                {% for match in game_stats['smash-bros']['recent_matches'][:1] %}
+                <div class="activity-item">
+                    <div class="activity-icon-wrapper smash-icon">⚔️</div>
+                    <div class="activity-content">
+                        <p class="activity-title">Recent Smash Bros match</p>
+                        <p class="activity-subtitle">{{ match.player }}</p>
+                    </div>
+                    <span class="activity-time">{{ match.date }}</span>
+                </div>
+                {% endfor %}
+                {% endif %}
             </div>
         </div>
-        
+
         <!-- Game Statistics Section -->
         <div class="stats-section">
             <div class="section-header">
                 <span class="stats-icon">📈</span>
                 <h2 class="section-title">Game Statistics</h2>
             </div>
-            
+
             <div class="stats-content">
                 <!-- Mario Kart Stats -->
                 <div class="game-stats-item">
@@ -164,46 +175,46 @@
                     <div class="game-stats-info">
                         <h4 class="game-stats-title">Mario Kart</h4>
                         <div class="progress-bar-container">
-                            <div class="progress-bar mario-progress" style="width: 82%;"></div>
+                            <div class="progress-bar mario-progress" style="width: {{ (player_counts['mario-kart'] / (player_counts['mario-kart'] + player_counts['smash-bros']) * 100) if (player_counts['mario-kart'] + player_counts['smash-bros']) > 0 else 0 }}%;"></div>
                         </div>
                         <div class="progress-bar-labels">
                             <span class="progress-label">Active Players</span>
-                            <span class="progress-value">24,862</span>
+                            <span class="progress-value">{{ player_counts['mario-kart'] }}</span>
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Smash Bros Stats -->
                 <div class="game-stats-item">
                     <div class="game-stats-bar smash-bar"></div>
                     <div class="game-stats-info">
                         <h4 class="game-stats-title">Smash Bros</h4>
                         <div class="progress-bar-container">
-                            <div class="progress-bar smash-progress" style="width: 65%;"></div>
+                            <div class="progress-bar smash-progress" style="width: {{ (player_counts['smash-bros'] / (player_counts['mario-kart'] + player_counts['smash-bros']) * 100) if (player_counts['mario-kart'] + player_counts['smash-bros']) > 0 else 0 }}%;"></div>
                         </div>
                         <div class="progress-bar-labels">
                             <span class="progress-label">Active Players</span>
-                            <span class="progress-value">19,734</span>
+                            <span class="progress-value">{{ player_counts['smash-bros'] }}</span>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Most Played Characters -->
+
+                <!-- Game Stats Summary -->
                 <div class="characters-section">
-                    <h4 class="characters-title">Most Played Characters</h4>
+                    <h4 class="characters-title">Game Stats Summary</h4>
                     <div class="characters-grid">
                         <div class="character-item">
-                            <div class="character-icon mario-character">M</div>
+                            <div class="character-icon mario-character">MK</div>
                             <div class="character-info">
-                                <p class="character-name">Mario</p>
-                                <p class="character-usage">42% usage</p>
+                                <p class="character-name">Mario Kart</p>
+                                <p class="character-usage">{{ game_stats['mario-kart']['total_games'] }} matches</p>
                             </div>
                         </div>
                         <div class="character-item">
-                            <div class="character-icon link-character">L</div>
+                            <div class="character-icon link-character">SB</div>
                             <div class="character-info">
-                                <p class="character-name">Link</p>
-                                <p class="character-usage">38% usage</p>
+                                <p class="character-name">Smash Bros</p>
+                                <p class="character-usage">{{ game_stats['smash-bros']['total_games'] }} matches</p>
                             </div>
                         </div>
                     </div>

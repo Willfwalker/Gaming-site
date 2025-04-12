@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}GameLeader{% endblock %}</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/leaderboard.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
@@ -25,16 +26,53 @@
             <div class="trophy-icon-brand">🏆</div>
             <h1>GameLeader</h1>
         </div>
-        
+
         <!-- Search Bar -->
         <div class="search-container">
-            <div class="search-icon">🔍</div>
-            <input type="text" placeholder="Search games or players..." class="search-input">
+            <div class="search-icon" id="searchIcon">🔍</div>
+            <input type="text" placeholder="Search games or players..." class="search-input" id="globalSearch">
+            <div class="search-results" id="searchResults"></div>
         </div>
-        
+
         <!-- Navigation Links -->
         <div class="navbar-actions">
-            <div class="navbar-icon">🔔</div>
+            <div class="navbar-icon notification-icon" id="notificationBell">
+                🔔
+                {% if announcements and announcements|length > 0 %}
+                <span class="notification-badge" id="notificationBadge">{{ announcements|length }}</span>
+                {% endif %}
+                <!-- Announcements Dropdown -->
+                <div class="announcements-dropdown" id="announcementsDropdown">
+                    <div class="dropdown-header">
+                        <h3>Announcements</h3>
+                        <button id="clearNotificationsBtn" class="clear-notifications-btn">Mark all as read</button>
+                    </div>
+                    <div class="dropdown-content">
+                        {% if announcements and announcements|length > 0 %}
+                        <div class="announcements-list">
+                            {% for announcement in announcements %}
+                            <div class="announcement-item importance-{{ announcement.importance }}" data-id="{{ announcement.id }}">
+                                {% if announcement.importance != 'normal' %}
+                                <div class="announcement-badge {{ announcement.importance }}">{{ announcement.importance }}</div>
+                                {% endif %}
+                                <div class="announcement-header">
+                                    <h4 class="announcement-title">{{ announcement.title }}</h4>
+                                    <span class="announcement-date">{{ announcement.created_at }}</span>
+                                </div>
+                                <div class="announcement-content">
+                                    <p>{{ announcement.content }}</p>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="no-announcements">
+                            <p>No announcements at this time.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
             <div class="navbar-icon">⚙️</div>
             <div class="user-profile">
                 <div class="user-avatar">👤</div>
@@ -55,21 +93,9 @@
                         </a>
                     </li>
                     <li>
-                        <a href="{{ url_for('leaderboard_page') }}" class="nav-item {% if request.endpoint == 'leaderboard_page' %}active{% endif %}">
-                            <span class="nav-icon">🏆</span>
-                            <span class="nav-text">Leaderboards</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" class="nav-item">
+                        <a href="{{ url_for('players_page') }}" class="nav-item {% if request.endpoint == 'players_page' %}active{% endif %}">
                             <span class="nav-icon">👥</span>
                             <span class="nav-text">Players</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" class="nav-item">
-                            <span class="nav-icon">📈</span>
-                            <span class="nav-text">Statistics</span>
                         </a>
                     </li>
                     <li>
@@ -78,8 +104,16 @@
                             <span class="nav-text">Tournaments</span>
                         </a>
                     </li>
+                    {% if is_admin %}
+                    <li>
+                        <a href="{{ url_for('admin_tournaments_page') }}" class="nav-item {% if request.endpoint == 'admin_tournaments_page' %}active{% endif %}">
+                            <span class="nav-icon">⚙️</span>
+                            <span class="nav-text">Admin Panel</span>
+                        </a>
+                    </li>
+                    {% endif %}
                 </ul>
-                
+
                 <!-- Sidebar footer removed -->
             </nav>
         </div>
@@ -94,23 +128,267 @@
     </div>
 
     <script>
-        // Theme toggle functionality
+        // Theme toggle and notification functionality
         document.addEventListener('DOMContentLoaded', function() {
+            // Theme toggle functionality
             const themeToggle = document.getElementById('themeToggle');
             const body = document.body;
-            
+
             // Check for saved theme preference
             const savedTheme = localStorage.getItem('theme');
             if (savedTheme === 'light') {
                 body.classList.add('light-theme');
             }
-            
+
             // Toggle theme on button click
             themeToggle.addEventListener('click', function() {
                 body.classList.toggle('light-theme');
                 const currentTheme = body.classList.contains('light-theme') ? 'light' : 'dark';
                 localStorage.setItem('theme', currentTheme);
             });
+
+            // Notification bell functionality
+            const notificationBell = document.getElementById('notificationBell');
+            const announcementsDropdown = document.getElementById('announcementsDropdown');
+            const notificationBadge = document.getElementById('notificationBadge');
+
+            if (notificationBell && announcementsDropdown) {
+                // Check if announcements have been viewed
+                const checkAnnouncementsViewed = function() {
+                    if (notificationBadge) {
+                        // Get the latest announcement IDs from the page
+                        const announcementItems = document.querySelectorAll('.announcement-item');
+                        const currentAnnouncementIds = [];
+
+                        announcementItems.forEach(item => {
+                            const announcementId = item.getAttribute('data-id');
+                            if (announcementId) {
+                                currentAnnouncementIds.push(announcementId);
+                            }
+                        });
+
+                        // Get viewed announcements from localStorage
+                        const viewedAnnouncements = JSON.parse(localStorage.getItem('viewedAnnouncements') || '[]');
+
+                        // Check if all current announcements have been viewed
+                        const allViewed = currentAnnouncementIds.every(id => viewedAnnouncements.includes(id));
+
+                        // Hide badge if all have been viewed
+                        if (allViewed && currentAnnouncementIds.length > 0) {
+                            notificationBadge.style.display = 'none';
+                        }
+                    }
+                };
+
+                // Run check on page load
+                checkAnnouncementsViewed();
+
+                // Toggle dropdown on bell click
+                notificationBell.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    announcementsDropdown.classList.toggle('show');
+
+                    // Mark announcements as viewed when dropdown is opened
+                    if (announcementsDropdown.classList.contains('show')) {
+                        const announcementItems = document.querySelectorAll('.announcement-item');
+                        const announcementIds = [];
+
+                        // Collect all announcement IDs
+                        announcementItems.forEach(item => {
+                            const announcementId = item.getAttribute('data-id');
+                            if (announcementId) {
+                                announcementIds.push(announcementId);
+                            }
+                        });
+
+                        if (announcementIds.length > 0) {
+                            // Get existing viewed announcements
+                            const viewedAnnouncements = JSON.parse(localStorage.getItem('viewedAnnouncements') || '[]');
+
+                            // Add new announcements to viewed list
+                            const updatedViewedAnnouncements = [...new Set([...viewedAnnouncements, ...announcementIds])];
+
+                            // Save back to localStorage
+                            localStorage.setItem('viewedAnnouncements', JSON.stringify(updatedViewedAnnouncements));
+
+                            // Hide the notification badge
+                            if (notificationBadge) {
+                                notificationBadge.style.display = 'none';
+                            }
+                        }
+                    }
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!notificationBell.contains(e.target)) {
+                        announcementsDropdown.classList.remove('show');
+                    }
+                });
+
+                // Prevent clicks inside dropdown from closing it
+                announcementsDropdown.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+
+                // Handle clear notifications button
+                const clearNotificationsBtn = document.getElementById('clearNotificationsBtn');
+                if (clearNotificationsBtn) {
+                    clearNotificationsBtn.addEventListener('click', function() {
+                        const announcementItems = document.querySelectorAll('.announcement-item');
+                        const announcementIds = [];
+
+                        // Collect all announcement IDs
+                        announcementItems.forEach(item => {
+                            const announcementId = item.getAttribute('data-id');
+                            if (announcementId) {
+                                announcementIds.push(announcementId);
+                            }
+                        });
+
+                        if (announcementIds.length > 0) {
+                            // Get existing viewed announcements
+                            const viewedAnnouncements = JSON.parse(localStorage.getItem('viewedAnnouncements') || '[]');
+
+                            // Add new announcements to viewed list
+                            const updatedViewedAnnouncements = [...new Set([...viewedAnnouncements, ...announcementIds])];
+
+                            // Save back to localStorage
+                            localStorage.setItem('viewedAnnouncements', JSON.stringify(updatedViewedAnnouncements));
+
+                            // Hide the notification badge
+                            if (notificationBadge) {
+                                notificationBadge.style.display = 'none';
+                            }
+
+                            // Add visual feedback
+                            clearNotificationsBtn.textContent = 'All read ✓';
+                            setTimeout(() => {
+                                clearNotificationsBtn.textContent = 'Mark all as read';
+                            }, 2000);
+                        }
+                    });
+                }
+            }
+
+            // Global search functionality
+            const globalSearch = document.getElementById('globalSearch');
+            const searchResults = document.getElementById('searchResults');
+            const searchIcon = document.getElementById('searchIcon');
+
+            if (globalSearch && searchResults) {
+                // Function to perform search
+                const performSearch = function(query) {
+                    if (!query || query.length < 2) {
+                        searchResults.classList.remove('show');
+                        return;
+                    }
+
+                    // Show loading state
+                    searchResults.innerHTML = '<div class="search-no-results">Searching...</div>';
+                    searchResults.classList.add('show');
+
+                    // Fetch search results via AJAX
+                    fetch(`/api/search?q=${encodeURIComponent(query)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                if (data.results.length > 0) {
+                                    // Render search results
+                                    searchResults.innerHTML = '';
+
+                                    // Group results by category
+                                    const categories = {};
+                                    data.results.forEach(result => {
+                                        if (!categories[result.category]) {
+                                            categories[result.category] = [];
+                                        }
+                                        categories[result.category].push(result);
+                                    });
+
+                                    // Add results to dropdown
+                                    Object.keys(categories).forEach(category => {
+                                        categories[category].forEach(result => {
+                                            const resultItem = document.createElement('div');
+                                            resultItem.className = 'search-result-item';
+                                            resultItem.innerHTML = `
+                                                <div class="search-result-category">${category}</div>
+                                                <div class="search-result-title">${result.title}</div>
+                                                ${result.subtitle ? `<div class="search-result-subtitle">${result.subtitle}</div>` : ''}
+                                            `;
+
+                                            // Add click handler
+                                            resultItem.addEventListener('click', function() {
+                                                window.location.href = result.url;
+                                            });
+
+                                            searchResults.appendChild(resultItem);
+                                        });
+                                    });
+                                } else {
+                                    // No results
+                                    searchResults.innerHTML = '<div class="search-no-results">No results found</div>';
+                                }
+                            } else {
+                                // Error
+                                searchResults.innerHTML = '<div class="search-no-results">Error searching. Please try again.</div>';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Search error:', error);
+                            searchResults.innerHTML = '<div class="search-no-results">Error searching. Please try again.</div>';
+                        });
+                };
+
+                // Handle search input
+                let searchTimeout;
+                globalSearch.addEventListener('input', function() {
+                    clearTimeout(searchTimeout);
+                    const query = this.value.trim();
+
+                    // Debounce search to avoid too many requests
+                    searchTimeout = setTimeout(() => {
+                        performSearch(query);
+                    }, 300);
+                });
+
+                // Handle search icon click
+                searchIcon.addEventListener('click', function() {
+                    const query = globalSearch.value.trim();
+                    if (query.length >= 2) {
+                        performSearch(query);
+                    } else {
+                        globalSearch.focus();
+                    }
+                });
+
+                // Handle Enter key
+                globalSearch.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        const query = this.value.trim();
+                        if (query.length >= 2) {
+                            // If dropdown is open and has results, navigate to first result
+                            if (searchResults.classList.contains('show')) {
+                                const firstResult = searchResults.querySelector('.search-result-item');
+                                if (firstResult) {
+                                    firstResult.click();
+                                    return;
+                                }
+                            }
+
+                            // Otherwise, redirect to players search page
+                            window.location.href = `/players?search=${encodeURIComponent(query)}`;
+                        }
+                    }
+                });
+
+                // Close search results when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!globalSearch.contains(e.target) && !searchResults.contains(e.target) && !searchIcon.contains(e.target)) {
+                        searchResults.classList.remove('show');
+                    }
+                });
+            }
         });
     </script>
     {% block scripts %}{% endblock %}

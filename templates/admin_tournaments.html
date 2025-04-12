@@ -18,10 +18,24 @@
 {% endwith %}
 
 <div class="dashboard-wrapper">
+    <!-- Admin Navigation Bar -->
+    <div class="admin-nav">
+        <div class="admin-nav-title">Admin Panel</div>
+        <div class="admin-nav-links">
+            <a href="{{ url_for('admin_tournaments_page') }}" class="admin-nav-link active">Tournaments</a>
+            <a href="{{ url_for('admin_announcements_page') }}" class="admin-nav-link">Announcements</a>
+        </div>
+    </div>
+
     <div class="dashboard-header">
-        <h1 class="dashboard-title">Tournament Management</h1>
-        <p class="dashboard-subtitle">Create and manage tournaments for the BUG Gaming Platform</p>
-        <button id="createTournamentBtn" class="primary-btn">Create New Tournament</button>
+        <div class="header-content">
+            <h1 class="dashboard-title">Tournament Management</h1>
+            <p class="dashboard-subtitle">Create and manage tournaments for the BUG Gaming Platform</p>
+        </div>
+        <div class="header-actions">
+            <button id="createTournamentBtn" class="primary-btn">Create New Tournament</button>
+            <a href="{{ url_for('admin_announcements_page') }}" class="secondary-btn">Manage Announcements</a>
+        </div>
     </div>
 
     <!-- Tournament Management Section -->
