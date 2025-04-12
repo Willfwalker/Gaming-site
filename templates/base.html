@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/leaderboard.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tournaments.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
     {% block extra_css %}{% endblock %}
 </head>
 <body class="game-dashboard">
@@ -81,9 +82,17 @@
         </div>
     </div>
 
+    <!-- Mobile menu overlay -->
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+
+    <!-- Mobile menu toggle button -->
+    <div class="mobile-menu-toggle" id="mobileMenuToggle">
+        <span class="menu-icon">☰</span>
+    </div>
+
     <div class="app-container">
         <!-- Sidebar -->
-        <div class="sidebar">
+        <div class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
                 <ul>
                     <li>
@@ -128,7 +137,7 @@
     </div>
 
     <script>
-        // Theme toggle and notification functionality
+        // Theme toggle, notification functionality, and mobile menu
         document.addEventListener('DOMContentLoaded', function() {
             // Theme toggle functionality
             const themeToggle = document.getElementById('themeToggle');
@@ -386,6 +395,129 @@
                 document.addEventListener('click', function(e) {
                     if (!globalSearch.contains(e.target) && !searchResults.contains(e.target) && !searchIcon.contains(e.target)) {
                         searchResults.classList.remove('show');
+                    }
+                });
+            }
+
+            // Mobile menu toggle functionality
+            const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+            const sidebar = document.getElementById('sidebar');
+            const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+
+            // Set initial sidebar state based on screen size
+            if (window.innerWidth >= 768 && sidebar) {
+                sidebar.style.width = '250px';
+                sidebar.style.opacity = '1';
+                sidebar.style.visibility = 'visible';
+            }
+
+            if (mobileMenuToggle && sidebar) {
+                // Use touchstart for mobile and click as fallback
+                ['touchstart', 'click'].forEach(eventType => {
+                    mobileMenuToggle.addEventListener(eventType, function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        sidebar.classList.toggle('mobile-visible');
+
+                        // Direct style manipulation for debugging
+                        if (sidebar.classList.contains('mobile-visible')) {
+                            sidebar.style.width = '250px';
+                            sidebar.style.opacity = '1';
+                            sidebar.style.visibility = 'visible';
+                        } else {
+                            sidebar.style.width = '0';
+                            sidebar.style.opacity = '0';
+                            sidebar.style.visibility = 'hidden';
+                        }
+
+                        console.log('Sidebar visible:', sidebar.classList.contains('mobile-visible'));
+                        console.log('Sidebar element:', sidebar);
+
+                        // Toggle active class on the menu button
+                        mobileMenuToggle.classList.toggle('active');
+
+                        // Toggle overlay visibility
+                        if (mobileMenuOverlay) {
+                            mobileMenuOverlay.classList.toggle('visible');
+                        }
+
+                        console.log('Mobile menu toggled');
+                    }, { passive: false });
+                });
+
+                // Close sidebar when clicking on a menu item (on mobile)
+                const navItems = document.querySelectorAll('.nav-item');
+                navItems.forEach(item => {
+                    item.addEventListener('click', function() {
+                        if (window.innerWidth < 768) {
+                            sidebar.classList.remove('mobile-visible');
+                            mobileMenuToggle.classList.remove('active');
+
+                            // Direct style manipulation
+                            sidebar.style.width = '0';
+                            sidebar.style.opacity = '0';
+                            sidebar.style.visibility = 'hidden';
+
+                            // Hide overlay
+                            if (mobileMenuOverlay) {
+                                mobileMenuOverlay.classList.remove('visible');
+                            }
+                        }
+                    });
+                });
+
+                // Close sidebar when clicking outside of it (on mobile)
+                document.addEventListener('click', function(e) {
+                    if (window.innerWidth < 768 &&
+                        !sidebar.contains(e.target) &&
+                        !mobileMenuToggle.contains(e.target) &&
+                        sidebar.classList.contains('mobile-visible')) {
+                        sidebar.classList.remove('mobile-visible');
+                        mobileMenuToggle.classList.remove('active');
+
+                        // Direct style manipulation
+                        sidebar.style.width = '0';
+                        sidebar.style.opacity = '0';
+                        sidebar.style.visibility = 'hidden';
+
+                        // Hide overlay
+                        if (mobileMenuOverlay) {
+                            mobileMenuOverlay.classList.remove('visible');
+                        }
+                    }
+                });
+
+                // Close sidebar when clicking on the overlay
+                if (mobileMenuOverlay) {
+                    ['touchstart', 'click'].forEach(eventType => {
+                        mobileMenuOverlay.addEventListener(eventType, function(e) {
+                            e.preventDefault();
+                            if (sidebar.classList.contains('mobile-visible')) {
+                                sidebar.classList.remove('mobile-visible');
+                                mobileMenuToggle.classList.remove('active');
+
+                                // Direct style manipulation
+                                sidebar.style.width = '0';
+                                sidebar.style.opacity = '0';
+                                sidebar.style.visibility = 'hidden';
+
+                                // Hide overlay
+                                mobileMenuOverlay.classList.remove('visible');
+                            }
+                        }, { passive: false });
+                    });
+                }
+
+                // Handle window resize
+                window.addEventListener('resize', function() {
+                    if (window.innerWidth >= 768) {
+                        sidebar.style.width = '250px';
+                        sidebar.style.opacity = '1';
+                        sidebar.style.visibility = 'visible';
+                    } else if (!sidebar.classList.contains('mobile-visible')) {
+                        sidebar.style.width = '0';
+                        sidebar.style.opacity = '0';
+                        sidebar.style.visibility = 'hidden';
                     }
                 });
             }

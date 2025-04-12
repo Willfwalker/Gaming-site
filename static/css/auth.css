@@ -10,7 +10,7 @@
     --light-btn-primary-hover: #2563eb;
     --light-link: #3b82f6;
     --light-alert: #dc2626;
-    
+
     /* Dark theme variables */
     --dark-bg: #111827;
     --dark-form-bg: #1f2937;
@@ -22,7 +22,7 @@
     --dark-btn-primary-hover: #2563eb;
     --dark-link: #3b82f6;
     --dark-alert: #dc2626;
-    
+
     /* Default to dark theme */
     --bg: var(--dark-bg);
     --form-bg: var(--dark-form-bg);

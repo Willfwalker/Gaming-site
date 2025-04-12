@@ -1,0 +1,111 @@
+/* Mobile-specific styles */
+
+/* General mobile adjustments */
+@media (max-width: 767px) {
+    /* Improve touch targets */
+    button, 
+    .nav-item,
+    .user-profile,
+    .navbar-icon,
+    .filter-btn,
+    .view-leaderboard-link,
+    .register-btn-small, 
+    .details-btn-small {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    /* Adjust font sizes for better readability */
+    body {
+        font-size: 16px;
+    }
+    
+    /* Improve form elements on mobile */
+    input, select, textarea {
+        font-size: 16px; /* Prevents iOS zoom on focus */
+    }
+    
+    /* Adjust spacing for mobile */
+    .content-area {
+        padding: 1rem;
+    }
+    
+    /* Ensure tables are scrollable on mobile */
+    .table-container {
+        margin: 0 -1rem;
+        padding: 0 1rem;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Adjust card layouts */
+    .game-widgets,
+    .tournament-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Ensure proper spacing between stacked elements */
+    .dashboard-section + .dashboard-section {
+        margin-top: 1.5rem;
+    }
+    
+    /* Adjust modal for mobile */
+    .modal-container {
+        width: 95%;
+        max-height: 80vh;
+    }
+    
+    /* Improve dropdown positioning */
+    .announcements-dropdown {
+        width: 300px;
+        right: -100px;
+    }
+    
+    /* Hide user name on mobile */
+    .user-name {
+        display: none;
+    }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+    /* Further reduce padding */
+    .content-area,
+    .game-widget-content,
+    .tournament-card-content,
+    .modal-content {
+        padding: 0.75rem;
+    }
+    
+    /* Adjust search container */
+    .search-container {
+        max-width: 200px;
+        margin: 0 0.25rem;
+    }
+    
+    /* Smaller font sizes */
+    .dashboard-title {
+        font-size: 1.25rem;
+    }
+    
+    .dashboard-subtitle {
+        font-size: 0.75rem;
+    }
+    
+    /* Adjust tournament filters */
+    .tournament-filters {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .filter-buttons {
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Smaller badges */
+    .rank-badge {
+        width: 22px;
+        height: 22px;
+        font-size: 0.7rem;
+    }
+}
