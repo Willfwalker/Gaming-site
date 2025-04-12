@@ -48,14 +48,23 @@ tournament_service = TournamentService(db)
 user_stats_service = UserStatsService(db)
 announcement_service = AnnouncementService(db)
 
-# Context processor to add admin status to all templates
+# Context processor to add admin status and user info to all templates
 @app.context_processor
-def inject_admin_status():
+def inject_template_vars():
     if 'user_id' in session:
         user_id = session.get('user_id')
+        user_name = session.get('user_name', 'User')
         is_admin = tournament_service.is_admin(user_id)
-        return {'is_admin': is_admin}
-    return {'is_admin': False}
+        return {
+            'is_admin': is_admin,
+            'user_name': user_name,
+            'user_id': user_id
+        }
+    return {
+        'is_admin': False,
+        'user_name': None,
+        'user_id': None
+    }
 
 @app.route('/', methods=['GET'])
 def home():
@@ -83,6 +92,7 @@ def login_view():
         try:
             user = auth.get_user_by_email(email)
             session['user_id'] = user.uid
+            session['user_name'] = user.display_name
 
             return redirect(url_for('home_page'))
         except Exception as e:
@@ -131,6 +141,7 @@ def register_page():
 @app.route('/logout')
 def logout_page():
     session.pop('user_id', None)
+    session.pop('user_name', None)
     return redirect(url_for('login_view'))
 
 @app.route('/')
