@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}User Settings{% endblock %}
+
+{% block extra_css %}
+<style>
+.settings-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+.settings-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.settings-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.settings-subtitle {
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+.settings-form {
+    background-color: var(--card-bg);
+    border-radius: 0.75rem;
+    padding: 2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+}
+
+.settings-section {
+    margin-bottom: 2rem;
+}
+
+.settings-section:last-child {
+    margin-bottom: 0;
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    background-color: var(--input-bg);
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--smash-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-input:disabled {
+    background-color: var(--bg-secondary);
+    color: var(--text-secondary);
+    cursor: not-allowed;
+}
+
+.form-help {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+}
+
+.btn-primary {
+    background-color: var(--smash-color);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.btn-primary:hover {
+    background-color: var(--mario-color);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    margin-top: 1rem;
+}
+
+.btn-secondary:hover {
+    background-color: var(--bg-hover);
+}
+
+.user-info-display {
+    background-color: var(--bg-secondary);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.info-value {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .settings-container {
+        padding: 1rem 0.5rem;
+    }
+    
+    .settings-form {
+        padding: 1.5rem;
+    }
+    
+    .settings-title {
+        font-size: 1.5rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="auth-alert {% if category %}{{ category }}{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="settings-container">
+    <div class="settings-header">
+        <h1 class="settings-title">User Settings</h1>
+        <p class="settings-subtitle">Manage your account preferences and profile information</p>
+    </div>
+
+    <div class="settings-form">
+        <div class="settings-section">
+            <h2 class="section-title">Account Information</h2>
+            <div class="user-info-display">
+                <div class="info-item">
+                    <span class="info-label">User ID:</span>
+                    <span class="info-value">{{ user.uid[:8] }}...</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Account Created:</span>
+                    <span class="info-value">{{ user_data.get('created_at', 'Unknown') }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Email Verified:</span>
+                    <span class="info-value">{{ 'Yes' if user.email_verified else 'No' }}</span>
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('settings_page') }}">
+            <div class="settings-section">
+                <h2 class="section-title">Profile Settings</h2>
+                
+                <div class="form-group">
+                    <label for="display_name" class="form-label">Display Name</label>
+                    <input type="text" id="display_name" name="display_name" class="form-input" 
+                           value="{{ user.display_name or '' }}" required>
+                    <div class="form-help">This name will be displayed throughout the site</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email" class="form-label">Email Address</label>
+                    <input type="email" id="email" name="email" class="form-input" 
+                           value="{{ user.email or '' }}" required>
+                    <div class="form-help">Used for login and notifications</div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary">Update Profile</button>
+        </form>
+
+        <button type="button" class="btn-secondary" onclick="window.location.href='{{ url_for('home_page') }}'">
+            Back to Dashboard
+        </button>
+    </div>
+</div>
+{% endblock %}

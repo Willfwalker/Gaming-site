@@ -179,22 +179,36 @@ body.game-dashboard {
     }
 }
 
-/* Sidebar */
+/* Sidebar - Hidden on mobile, visible on desktop */
 .sidebar {
-    position: fixed;
-    top: 60px;
-    left: 0;
-    width: 4rem;
-    height: calc(100vh - 60px);
-    background-color: var(--sidebar-bg);
-    transition: background-color 0.3s ease, width 0.3s ease;
-    overflow-y: auto;
-    z-index: 90;
+    display: none;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease, background-color 0.3s ease;
 }
 
 @media (min-width: 768px) {
     .sidebar {
+        display: flex;
+        position: fixed;
+        top: 60px;
+        left: 0;
         width: 16rem;
+        height: calc(100vh - 60px);
+        background-color: var(--sidebar-bg);
+        flex-direction: column;
+        overflow-y: auto;
+        z-index: 90;
+        transform: translateX(0);
+    }
+}
+
+/* Ensure sidebar is completely hidden on mobile */
+@media (max-width: 767px) {
+    .sidebar {
+        display: none !important;
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
     }
 }
 
@@ -307,6 +321,7 @@ body.game-dashboard {
     margin-left: 0;
     margin-top: 60px;
     padding: 1rem;
+    width: 100%;
     transition: margin-left 0.3s ease;
 }
 
@@ -314,6 +329,15 @@ body.game-dashboard {
     .main-content {
         margin-left: 16rem;
         padding: 1.5rem;
+        width: calc(100% - 16rem);
+    }
+}
+
+/* Ensure main content takes full width on mobile */
+@media (max-width: 767px) {
+    .main-content {
+        margin-left: 0 !important;
+        width: 100% !important;
     }
 }
 

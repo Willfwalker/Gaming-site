@@ -1,6 +1,8 @@
 import os
 import json
 from flask import Flask, jsonify, render_template, request, redirect, url_for, flash, session, Response
+from flask_caching import Cache
+from flask_compress import Compress
 from datetime import datetime
 from services.firebase_auth_service import FirebaseAuthService
 from services.tournament_service import TournamentService
@@ -14,6 +16,30 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'dev-secret-key')
+
+# Performance optimizations
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 31536000  # 1 year cache for static files
+app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour session timeout
+
+# Configure caching - use simple cache for development, Redis for production
+cache_config = {
+    'CACHE_TYPE': 'simple',  # In-memory cache for development
+    'CACHE_DEFAULT_TIMEOUT': 300  # 5 minutes default timeout
+}
+
+# Use Redis if available (for production)
+redis_url = os.getenv('REDIS_URL')
+if redis_url:
+    cache_config = {
+        'CACHE_TYPE': 'redis',
+        'CACHE_REDIS_URL': redis_url,
+        'CACHE_DEFAULT_TIMEOUT': 300
+    }
+
+cache = Cache(app, config=cache_config)
+
+# Enable response compression
+compress = Compress(app)
 
 # Add error handlers for better debugging
 @app.errorhandler(404)
@@ -48,22 +74,37 @@ tournament_service = TournamentService(db)
 user_stats_service = UserStatsService(db)
 announcement_service = AnnouncementService(db)
 
+# Cached helper functions
+@cache.memoize(timeout=300)  # Cache for 5 minutes
+def get_cached_announcements(limit=5):
+    """Get announcements with caching"""
+    return announcement_service.get_all_announcements(limit=limit)
+
+@cache.memoize(timeout=600)  # Cache for 10 minutes
+def is_user_admin(user_id):
+    """Check if user is admin with caching"""
+    return tournament_service.is_admin(user_id)
+
 # Context processor to add admin status and user info to all templates
 @app.context_processor
 def inject_template_vars():
     if 'user_id' in session:
         user_id = session.get('user_id')
         user_name = session.get('user_name', 'User')
-        is_admin = tournament_service.is_admin(user_id)
+        is_admin = is_user_admin(user_id)
+        # Get announcements for the notification bell
+        announcements = get_cached_announcements(limit=5)
         return {
             'is_admin': is_admin,
             'user_name': user_name,
-            'user_id': user_id
+            'user_id': user_id,
+            'announcements': announcements
         }
     return {
         'is_admin': False,
         'user_name': None,
-        'user_id': None
+        'user_id': None,
+        'announcements': get_cached_announcements(limit=5)
     }
 
 @app.route('/', methods=['GET'])
@@ -144,6 +185,88 @@ def logout_page():
     session.pop('user_name', None)
     return redirect(url_for('login_view'))
 
+@app.route('/settings', methods=['GET', 'POST'])
+def settings_page():
+    # Check if user is logged in
+    if 'user_id' not in session:
+        flash('Please login to access settings', 'error')
+        return redirect(url_for('login_view'))
+
+    user_id = session.get('user_id')
+
+    if request.method == 'POST':
+        # Get form data
+        display_name = request.form.get('display_name')
+        email = request.form.get('email')
+
+        # Validate form data
+        if not display_name or not email:
+            flash('Display name and email are required', 'error')
+            return redirect(url_for('settings_page'))
+
+        try:
+            # Update user in Firebase Auth
+            auth.update_user(
+                user_id,
+                display_name=display_name,
+                email=email
+            )
+
+            # Update user profile in Firestore
+            db.collection('users').document(user_id).update({
+                'display_name': display_name,
+                'email': email,
+                'updated_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            })
+
+            # Update session
+            session['user_name'] = display_name
+
+            flash('Profile updated successfully', 'success')
+            return redirect(url_for('settings_page'))
+
+        except Exception as e:
+            flash(f'Failed to update profile: {str(e)}', 'error')
+            return redirect(url_for('settings_page'))
+
+    # GET request - show settings form
+    try:
+        # Get user data from Firebase Auth
+        user = auth.get_user(user_id)
+
+        # Get additional user data from Firestore
+        user_doc = db.collection('users').document(user_id).get()
+        user_data = user_doc.to_dict() if user_doc.exists else {}
+
+        return render_template('settings.html',
+                             user=user,
+                             user_data=user_data)
+
+    except Exception as e:
+        flash(f'Failed to load user data: {str(e)}', 'error')
+        return redirect(url_for('home_page'))
+
+# Cached dashboard data functions
+@cache.memoize(timeout=180)  # Cache for 3 minutes
+def get_cached_player_counts():
+    """Get game player counts with caching"""
+    return user_stats_service.get_game_player_counts()
+
+@cache.memoize(timeout=300)  # Cache for 5 minutes
+def get_cached_top_players(limit=3):
+    """Get top players with caching"""
+    return user_stats_service.get_top_players(limit=limit)
+
+@cache.memoize(timeout=300)  # Cache for 5 minutes
+def get_cached_game_statistics():
+    """Get game statistics with caching"""
+    return user_stats_service.get_game_statistics()
+
+@cache.memoize(timeout=180)  # Cache for 3 minutes
+def get_cached_tournaments():
+    """Get tournaments with caching"""
+    return tournament_service.get_all_tournaments()
+
 @app.route('/')
 @app.route('/home')
 def home_page():
@@ -155,24 +278,18 @@ def home_page():
     # Get user ID from session
     user_id = session.get('user_id')
 
-    # Get game player counts
-    player_counts = user_stats_service.get_game_player_counts()
-
-    # Get top players
-    top_players = user_stats_service.get_top_players(limit=3)
-
-    # Get game statistics
-    game_stats = user_stats_service.get_game_statistics()
-
-    # Get upcoming tournaments
-    tournaments, featured_tournament = tournament_service.get_all_tournaments()
+    # Get cached data (expensive operations)
+    player_counts = get_cached_player_counts()
+    top_players = get_cached_top_players(limit=3)
+    game_stats = get_cached_game_statistics()
+    tournaments, featured_tournament = get_cached_tournaments()
     upcoming_tournaments = [t for t in tournaments if t.get('status') == 'upcoming']
 
-    # Get user's stats
+    # Get user's stats (user-specific, can't cache globally)
     user_stats = user_stats_service.get_user_stats(user_id)
 
-    # Get announcements
-    announcements = announcement_service.get_all_announcements(limit=3)
+    # Get announcements (already cached in context processor)
+    announcements = get_cached_announcements(limit=3)
 
     return render_template('home.html',
                            player_counts=player_counts,
@@ -182,6 +299,12 @@ def home_page():
                            featured_tournament=featured_tournament,
                            user_stats=user_stats,
                            announcements=announcements)
+
+# Cached leaderboard functions
+@cache.memoize(timeout=300)  # Cache for 5 minutes
+def get_cached_leaderboard(game_type, limit=10):
+    """Get leaderboard with caching"""
+    return user_stats_service.get_leaderboard(game_type, limit)
 
 @app.route('/leaderboard', methods=['GET'])
 @app.route('/leaderboard/<game_type>', methods=['GET'])
@@ -194,26 +317,32 @@ def leaderboard_page(game_type=None):
     # If a specific game type is provided, only get that leaderboard
     if game_type:
         if game_type == 'mario-kart':
-            mario_kart_leaderboard = user_stats_service.get_leaderboard('mario-kart', 10)
+            mario_kart_leaderboard = get_cached_leaderboard('mario-kart', 10)
             smash_bros_leaderboard = None
             active_game = 'mario-kart'
         elif game_type == 'smash-bros':
             mario_kart_leaderboard = None
-            smash_bros_leaderboard = user_stats_service.get_leaderboard('smash-bros', 10)
+            smash_bros_leaderboard = get_cached_leaderboard('smash-bros', 10)
             active_game = 'smash-bros'
         else:
             # Invalid game type, redirect to main leaderboard
             return redirect(url_for('leaderboard_page'))
     else:
         # Get leaderboards for each game type
-        mario_kart_leaderboard = user_stats_service.get_leaderboard('mario-kart', 5)
-        smash_bros_leaderboard = user_stats_service.get_leaderboard('smash-bros', 5)
+        mario_kart_leaderboard = get_cached_leaderboard('mario-kart', 5)
+        smash_bros_leaderboard = get_cached_leaderboard('smash-bros', 5)
         active_game = None
 
     return render_template('leaderboard.html',
                            mario_kart_leaderboard=mario_kart_leaderboard,
                            smash_bros_leaderboard=smash_bros_leaderboard,
                            active_game=active_game)
+
+# Cached players function
+@cache.memoize(timeout=300)  # Cache for 5 minutes
+def get_cached_all_players():
+    """Get all players with caching"""
+    return user_stats_service.get_all_players()
 
 @app.route('/players', methods=['GET'])
 def players_page():
@@ -222,8 +351,8 @@ def players_page():
         flash('Please login to access players', 'error')
         return redirect(url_for('login_view'))
 
-    # Get all players from service
-    players = user_stats_service.get_all_players()
+    # Get all players from service (cached)
+    players = get_cached_all_players()
 
     return render_template('players.html', players=players)
 
@@ -234,8 +363,8 @@ def tournaments_page():
         flash('Please login to access tournaments', 'error')
         return redirect(url_for('login_view'))
 
-    # Get tournaments from service
-    tournaments, featured_tournament = tournament_service.get_all_tournaments()
+    # Get tournaments from service (cached)
+    tournaments, featured_tournament = get_cached_tournaments()
 
     user_id = session.get('user_id')
     return render_template('tournaments.html', tournaments=tournaments, featured_tournament=featured_tournament, user_id=user_id)
@@ -300,7 +429,7 @@ def create_tournament():
         return jsonify({'success': False, 'message': 'Please login to access admin features'}), 401
 
     user_id = session.get('user_id')
-    if not tournament_service.is_admin(user_id):
+    if not is_user_admin(user_id):
         return jsonify({'success': False, 'message': 'You do not have permission to perform this action'}), 403
 
     # Get tournament data from request
@@ -308,6 +437,10 @@ def create_tournament():
 
     # Create tournament
     result, status_code = tournament_service.create_tournament(tournament_data)
+
+    # Clear tournament cache when new tournament is created
+    if result.get('success'):
+        cache.delete_memoized(get_cached_tournaments)
 
     return jsonify(result), status_code
 
@@ -333,7 +466,7 @@ def update_tournament(tournament_id):
         return jsonify({'success': False, 'message': 'Please login to access admin features'}), 401
 
     user_id = session.get('user_id')
-    if not tournament_service.is_admin(user_id):
+    if not is_user_admin(user_id):
         return jsonify({'success': False, 'message': 'You do not have permission to perform this action'}), 403
 
     # Get tournament data from request
@@ -341,6 +474,10 @@ def update_tournament(tournament_id):
 
     # Update tournament
     result, status_code = tournament_service.update_tournament(tournament_id, tournament_data)
+
+    # Clear tournament cache when tournament is updated
+    if result.get('success'):
+        cache.delete_memoized(get_cached_tournaments)
 
     return jsonify(result), status_code
 
@@ -439,8 +576,8 @@ def get_leaderboard(game_type):
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Please login to view leaderboard'}), 401
 
-    # Get leaderboard for the specified game type
-    leaderboard = user_stats_service.get_leaderboard(game_type, 10)
+    # Get leaderboard for the specified game type (cached)
+    leaderboard = get_cached_leaderboard(game_type, 10)
 
     return jsonify({'success': True, 'leaderboard': leaderboard}), 200
 
@@ -536,6 +673,8 @@ def admin_create_announcement():
         )
 
         if announcement_id:
+            # Clear announcements cache when new announcement is created
+            cache.delete_memoized(get_cached_announcements)
             flash('Announcement created successfully', 'success')
             return redirect(url_for('admin_announcements_page'))
         else:
@@ -619,6 +758,14 @@ def api_get_announcements():
     announcements = announcement_service.get_all_announcements(limit=limit)
     return jsonify({'success': True, 'announcements': announcements})
 
+# Cached search data function
+@cache.memoize(timeout=600)  # Cache for 10 minutes
+def get_search_data():
+    """Get search data with caching"""
+    players = get_cached_all_players()
+    tournaments, _ = get_cached_tournaments()
+    return players, tournaments
+
 # API route for global search
 @app.route('/api/search', methods=['GET'])
 def api_search():
@@ -628,8 +775,10 @@ def api_search():
 
     results = []
 
+    # Get cached search data
+    players, tournaments = get_search_data()
+
     # Search for players
-    players = user_stats_service.get_all_players()
     for player in players:
         if query.lower() in player['display_name'].lower():
             results.append({
@@ -640,7 +789,6 @@ def api_search():
             })
 
     # Search for tournaments
-    tournaments, _ = tournament_service.get_all_tournaments()
     for tournament in tournaments:
         if query.lower() in tournament['name'].lower() or query.lower() in tournament['description'].lower():
             results.append({
