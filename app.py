@@ -64,10 +64,16 @@ def internal_server_error(e):
         'env': os.environ.get('VERCEL_ENV', 'development')
     }), 500
 
+# Initialize Firebase Auth Service (this also initializes Firebase Admin SDK)
 firebase_auth = FirebaseAuthService(app)
 
-# Initialize Firestore database
-db = firestore.client()
+# Initialize Firestore database (after Firebase is initialized)
+try:
+    db = firestore.client()
+    print("Firestore client initialized successfully")
+except Exception as e:
+    print(f"Error initializing Firestore client: {e}")
+    raise e
 
 # Initialize services
 tournament_service = TournamentService(db)

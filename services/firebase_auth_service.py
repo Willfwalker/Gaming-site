@@ -37,22 +37,32 @@ class FirebaseAuthService:
         # Initialize Firebase Admin SDK if not already initialized
         if not self.firebase_app and not firebase_admin._apps:
             try:
-                # Get the path to the Firebase service account file
-                firebase_service_account = os.getenv('FIREBASE_SERVICE_ACCOUNT', 'bug-site-firebase-adminsdk-fbsvc-38e4147289.json')
+                # Try to get Firebase credentials from environment variables first (for Vercel)
+                firebase_credentials_json = os.getenv('FIREBASE_CREDENTIALS_JSON')
 
-                # Check if the file exists
-                if os.path.exists(firebase_service_account):
-                    print(f"Using Firebase credentials from file: {firebase_service_account}")
-                    # Create credentials from the service account file
-                    cred = credentials.Certificate(firebase_service_account)
+                if firebase_credentials_json:
+                    print("Using Firebase credentials from environment variable")
+                    # Parse the JSON credentials from environment variable
+                    import json
+                    cred_dict = json.loads(firebase_credentials_json)
+                    cred = credentials.Certificate(cred_dict)
                 else:
-                    print(f"Firebase credentials file not found: {firebase_service_account}")
-                    raise FileNotFoundError(f"Firebase credentials file not found: {firebase_service_account}")
+                    # Fallback to service account file (for local development)
+                    firebase_service_account = os.getenv('FIREBASE_SERVICE_ACCOUNT', 'firebase-credentials.json')
+
+                    if os.path.exists(firebase_service_account):
+                        print(f"Using Firebase credentials from file: {firebase_service_account}")
+                        cred = credentials.Certificate(firebase_service_account)
+                    else:
+                        print(f"Firebase credentials file not found: {firebase_service_account}")
+                        print("Please set FIREBASE_CREDENTIALS_JSON environment variable or provide credentials file")
+                        raise FileNotFoundError(f"Firebase credentials not found. Set FIREBASE_CREDENTIALS_JSON env var or provide {firebase_service_account} file")
 
                 self.firebase_app = firebase_admin.initialize_app(cred)
                 print("Firebase Admin SDK initialized successfully")
             except Exception as e:
                 print(f"Firebase initialization error: {e}")
+                raise e
 
         # Register routes with the Flask app
         self._register_routes()
